@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Visual - Ajuste de Banners</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #db2777;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .info {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input[type="range"] {
+            padding: 0;
+        }
+
+        .value-display {
+            display: inline-block;
+            background: #db2777;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .preview-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .preview {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 3px solid #db2777;
+            background: url('https://images.unsplash.com/photo-1557683316-973673baf926?w=1920&h=600&fit=crop');
+            background-repeat: no-repeat;
+        }
+
+        .preview-content {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 40px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .preview-content h2 {
+            color: #111827;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .preview-content p {
+            color: #4b5563;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: #db2777;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .dimensions-info {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .dimensions-info strong {
+            color: #92400e;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .dimensions-info code {
+            background: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #db2777;
+        }
+
+        .code-output {
+            background: #1f2937;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .code-comment {
+            color: #9ca3af;
+        }
+
+        @media (max-width: 768px) {
+            .preview {
+                height: 300px;
+            }
+            .preview-content {
+                margin: 20px;
+                padding: 20px;
+            }
+            .preview-content h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Teste Visual - Ajuste de Banners</h1>
+        <p style="color: #6b7280; margin-bottom: 20px;">
+            Use os controles abaixo para ver como diferentes configurações afetam a visualização do banner
+        </p>
+
+        <!-- Informações da Imagem -->
+        <div class="info">
+            <h3 style="color: #111827; margin-bottom: 10px;">📸 Imagem de Exemplo</h3>
+            <p style="color: #6b7280; margin-bottom: 5px;">
+                <strong>URL:</strong> https://images.unsplash.com/photo-1557683316-973673baf926
+            </p>
+            <p style="color: #6b7280; margin-bottom: 5px;">
+                <strong>Dimensão original:</strong> 1920px × 600px (proporção 3.2:1)
+            </p>
+            <p style="color: #6b7280;">
+                <strong>Descrição:</strong> Imagem de exemplo do Unsplash
+            </p>
+        </div>
+
+        <!-- Controles -->
+        <div class="controls">
+            <h3 style="color: #111827; margin-bottom: 15px;">⚙️ Controles de Ajuste</h3>
+
+            <!-- Background Size -->
+            <div class="control-group">
+                <label>
+                    🔍 background-size (como a imagem preenche a área)
+                </label>
+                <select id="bgSize" onchange="updatePreview()">
+                    <option value="cover">cover - Preenche toda área (pode cortar bordas) ✅ RECOMENDADO</option>
+                    <option value="contain">contain - Mostra imagem completa (pode ter espaços vazios)</option>
+                    <option value="100% 100%">100% 100% - Estica para preencher (pode distorcer)</option>
+                    <option value="100% auto">100% auto - Largura total, altura proporcional</option>
+                    <option value="auto 100%">auto 100% - Altura total, largura proporcional</option>
+                </select>
+            </div>
+
+            <!-- Background Position -->
+            <div class="control-group">
+                <label>
+                    📍 background-position (qual parte da imagem mostrar)
+                </label>
+                <select id="bgPosition" onchange="updatePreview()">
+                    <option value="center">center - Centro da imagem ✅ RECOMENDADO</option>
+                    <option value="top">top - Topo da imagem</option>
+                    <option value="bottom">bottom - Base da imagem</option>
+                    <option value="left">left - Lado esquerdo</option>
+                    <option value="right">right - Lado direito</option>
+                    <option value="center top">center top - Centro horizontal, topo vertical</option>
+                    <option value="center bottom">center bottom - Centro horizontal, base vertical</option>
+                </select>
+            </div>
+
+            <!-- Altura do Container -->
+            <div class="control-group">
+                <label>
+                    📏 Altura do Container (min-height)
+                    <span class="value-display" id="heightValue">500px</span>
+                </label>
+                <input 
+                    type="range" 
+                    id="containerHeight" 
+                    min="300" 
+                    max="800" 
+                    value="500" 
+                    step="50"
+                    oninput="updateHeight(this.value)">
+                <p style="color: #6b7280; font-size: 13px; margin-top: 5px;">
+                    Arraste para ajustar a altura da seção
+                </p>
+            </div>
+
+            <!-- Opacidade do Card -->
+            <div class="control-group">
+                <label>
+                    🎨 Opacidade do Card Branco
+                    <span class="value-display" id="opacityValue">95%</span>
+                </label>
+                <input 
+                    type="range" 
+                    id="cardOpacity" 
+                    min="70" 
+                    max="100" 
+                    value="95" 
+                    step="5"
+                    oninput="updateOpacity(this.value)">
+                <p style="color: #6b7280; font-size: 13px; margin-top: 5px;">
+                    Controla a transparência do card branco sobre o banner
+                </p>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-container">
+            <h3 style="color: #111827; margin-bottom: 15px;">👁️ Visualização ao Vivo</h3>
+            <div id="preview" class="preview">
+                <div class="preview-content">
+                    <h2>Se você está em risco agora</h2>
+                    <p>Ligue imediatamente para os serviços de emergência. Você não está sozinha.</p>
+                    <a href="#" class="btn">📞 190 - Polícia</a>
+                    <a href="#" class="btn" style="background: #9333ea;">📞 180 - Central</a>
+                </div>
+            </div>
+
+            <!-- Informações das Dimensões -->
+            <div class="dimensions-info">
+                <strong>📐 Informações Atuais:</strong>
+                <p style="margin: 0; color: #92400e;">
+                    Container: <code id="currentDimensions">Largura automática × 500px altura</code><br>
+                    Ajuste: <code id="currentSettings">background-size: cover; background-position: center;</code>
+                </p>
+            </div>
+        </div>
+
+        <!-- Código CSS Gerado -->
+        <div class="preview-container">
+            <h3 style="color: #111827; margin-bottom: 15px;">💻 Código CSS Gerado</h3>
+            <p style="color: #6b7280; margin-bottom: 10px;">
+                Copie este código e cole no seu arquivo CSS:
+            </p>
+            <div class="code-output" id="codeOutput"></div>
+        </div>
+
+        <!-- Dicas -->
+        <div class="info">
+            <h3 style="color: #111827; margin-bottom: 10px;">💡 Dicas Importantes</h3>
+            <ul style="color: #6b7280; line-height: 1.8; padding-left: 20px;">
+                <li><strong>cover</strong> é ideal quando você quer que a imagem preencha toda a área, mesmo cortando um pouco</li>
+                <li><strong>contain</strong> é ideal quando você precisa ver a imagem completa, aceitando espaços vazios</li>
+                <li><strong>center</strong> é a posição mais segura para a maioria dos casos</li>
+                <li>Teste em diferentes tamanhos de tela (use o DevTools do navegador - F12)</li>
+                <li>Se o card branco está difícil de ler, aumente a opacidade para 95-100%</li>
+                <li>Para imagens com texto importante, use <strong>center top</strong> ou <strong>center bottom</strong></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Atualiza a preview em tempo real
+        function updatePreview() {
+            const preview = document.getElementById('preview');
+            const bgSize = document.getElementById('bgSize').value;
+            const bgPosition = document.getElementById('bgPosition').value;
+            
+            preview.style.backgroundSize = bgSize;
+            preview.style.backgroundPosition = bgPosition;
+            
+            // Atualiza informações
+            document.getElementById('currentSettings').textContent = 
+                `background-size: ${bgSize}; background-position: ${bgPosition};`;
+            
+            updateCode();
+        }
+
+        // Atualiza altura
+        function updateHeight(value) {
+            const preview = document.getElementById('preview');
+            preview.style.height = value + 'px';
+            document.getElementById('heightValue').textContent = value + 'px';
+            document.getElementById('currentDimensions').textContent = 
+                `Largura automática × ${value}px altura`;
+            updateCode();
+        }
+
+        // Atualiza opacidade do card
+        function updateOpacity(value) {
+            const content = document.querySelector('.preview-content');
+            const opacity = value / 100;
+            content.style.backgroundColor = `rgba(255, 255, 255, ${opacity})`;
+            document.getElementById('opacityValue').textContent = value + '%';
+            updateCode();
+        }
+
+        // Gera código CSS
+        function updateCode() {
+            const bgSize = document.getElementById('bgSize').value;
+            const bgPosition = document.getElementById('bgPosition').value;
+            const height = document.getElementById('containerHeight').value;
+            const opacity = document.getElementById('cardOpacity').value / 100;
+
+            const code = `<span class="code-comment">/* Container do carrossel */</span>
+.background-carousel {
+    position: relative;
+    overflow: hidden;
+    min-height: ${height}px; <span class="code-comment">/* Ajuste conforme necessário */</span>
+}
+
+<span class="code-comment">/* Banner 1 (fundo) */</span>
+.background-carousel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background-image: url('banner1.png');
+    background-size: ${bgSize};
+    background-position: ${bgPosition};
+    background-repeat: no-repeat;
+}
+
+<span class="code-comment">/* Banner 2 (animado) */</span>
+.background-carousel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    background-image: url('banner2.png');
+    background-size: ${bgSize};
+    background-position: ${bgPosition};
+    background-repeat: no-repeat;
+    animation: fadeBanners 10s infinite ease-in-out;
+}
+
+<span class="code-comment">/* Card branco sobre o banner */</span>
+.background-carousel .bg-white {
+    background-color: rgba(255, 255, 255, ${opacity}) !important;
+    backdrop-filter: blur(10px);
+}`;
+
+            document.getElementById('codeOutput').innerHTML = code;
+        }
+
+        // Inicializa
+        window.onload = function() {
+            updateCode();
+        };
+    </script>
+</body>
+</html>

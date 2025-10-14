@@ -11,10 +11,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Leaflet CSS para o mapa interativo -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Tailwind Config -->
+    <!-- Configuração personalizada do Tailwind -->
     <script>
         tailwind.config = {
             theme: {
@@ -58,11 +63,13 @@
             font-family: 'Inter', sans-serif;
         }
         
+        /* Estilos de acessibilidade para foco no teclado */
         *:focus-visible {
             outline: 3px solid #e04d96;
             outline-offset: 2px;
         }
         
+        /* Classe para leitores de tela (screen readers) */
         .sr-only {
             position: absolute;
             width: 1px;
@@ -75,30 +82,113 @@
             border-width: 0;
         }
         
+        /* Navegação suave entre seções */
         html {
             scroll-behavior: smooth;
         }
         
+        /* Texto com gradiente para títulos especiais */
         .gradient-text {
             background: linear-gradient(135deg, #e04d96 0%, #8b5cf6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+
+        /* Estilos para o mapa */
+        #map-container {
+            height: 400px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        /* Animação suave para cards ao passar o mouse */
+        .service-card {
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-4px);
+        }
+
+        /* NOVO CÓDIGO PARA CARROSSEL DE FUNDO */
+
+        /* 1. Define a animação de fade (transição de opacidade) */
+        @keyframes fadeBanners {
+            /* De 0% a 45%: Banner 1 (o que está por baixo) é visível */
+            0% { opacity: 1; }
+            45% { opacity: 1; }
+            /* Em 50%: Começa a transição para o Banner 2 */
+            50% { opacity: 0; }
+            /* De 50% a 95%: Banner 2 (o que está por cima) é visível */
+            95% { opacity: 0; }
+            /* Em 100%: Retorna ao Banner 1 */
+            100% { opacity: 1; }
+        }
+
+        /* 2. Define a seção de emergência como container do carrossel */
+        .background-carousel {
+            position: relative; /* Permite posicionar os banners dentro */
+            overflow: hidden;
+            background: none !important; /* Remove o gradiente fixo original */
+        }
+
+        /* 3. Cria o Banner 1 no fundo (usando ::before) */
+        .background-carousel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Fica abaixo do Banner 2 */
+            background-image: url('banner1.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* 4. Cria o Banner 2 sobre o Banner 1 (usando ::after) */
+        .background-carousel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2; /* Fica acima do Banner 1 e será animado */
+            background-image: url('banner2.jpg');
+            background-size: cover;
+            background-position: center;
+            /* Aplica a animação: 10 segundos de duração, infinito */
+            animation: fadeBanners 10s infinite; 
+        }
+
+        /* 5. Garante que o cartão de emergência interno fique visível acima dos banners */
+        .background-carousel > div {
+            position: relative;
+            z-index: 3;
+        }
+        
+        /* Recomendação: aumenta a opacidade do cartão interno para melhor legibilidade */
+        .background-carousel .bg-white {
+            background-color: rgba(255, 255, 255, 0.95) !important; 
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased">
     
-    <!-- Header fixo -->
+    <!-- Header fixo com botão de saída rápida -->
     <header class="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center justify-between flex-wrap gap-4">
                 <div class="flex items-center gap-4">
                     <h1 class="text-2xl sm:text-3xl font-bold text-brand-600">Juntas Goiás</h1>
+                    <!-- Aviso de segurança para desktop -->
                     <p class="hidden sm:block text-sm text-gray-600 bg-yellow-50 px-3 py-1 rounded-md border border-yellow-200">
                         🔒 Use navegação anônima para maior segurança
                     </p>
                 </div>
+                <!-- Botão de saída rápida (ESC) -->
                 <button 
                     onclick="quickExit()" 
                     class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors focus:ring-4 focus:ring-red-300"
@@ -106,17 +196,19 @@
                     ⚠️ Sair Rápido (Esc)
                 </button>
             </div>
+            <!-- Aviso de segurança para mobile -->
             <p class="sm:hidden text-xs text-gray-600 bg-yellow-50 px-3 py-2 rounded-md border border-yellow-200 mt-3">
                 🔒 Use navegação anônima para maior segurança
             </p>
         </div>
     </header>
 
+    <!-- Espaçamento para compensar o header fixo -->
     <div class="h-24 sm:h-20"></div>
 
     <main>
-        <!-- Hero - Emergência -->
-        <section class="bg-gradient-to-br from-brand-50 via-accent-50 to-purple-50 py-12 sm:py-16" aria-labelledby="hero-title">
+        <!-- Seção Hero - Emergência e contatos imediatos -->
+        <section class="background-carousel py-12 sm:py-16" aria-labelledby="hero-title">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-brand-200">
                     <h2 id="hero-title" class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
@@ -126,6 +218,7 @@
                         Ligue imediatamente para os serviços de emergência. Você não está sozinha e tem direito a proteção.
                     </p>
                     
+                    <!-- Botões de emergência -->
                     <div class="grid sm:grid-cols-2 gap-4 mb-6">
                         <a href="tel:190" 
                            class="bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 px-6 rounded-xl transition-colors text-center shadow-md focus:ring-4 focus:ring-red-300">
@@ -139,12 +232,14 @@
                         </a>
                     </div>
                     
+                    <!-- Botão de saída rápida secundário -->
                     <button 
                         onclick="quickExit()" 
                         class="w-full bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg transition-colors focus:ring-4 focus:ring-gray-400 mb-6">
                         ⚠️ Sair Rápido (Esc)
                     </button>
                     
+                    <!-- Aviso de segurança importante -->
                     <div class="p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
                         <p class="text-sm text-gray-700">
                             <strong>Importante:</strong> Use sempre navegação anônima/privada. Evite enviar documentos ou fotos se houver risco de alguém acessar seu celular ou computador.
@@ -166,9 +261,9 @@
             </div>
         </section>
 
-        <!-- Busca por município -->
+        <!-- Seção de busca por município com mapa interativo -->
         <section class="py-12 sm:py-16 bg-white" aria-labelledby="busca-title">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 id="busca-title" class="text-3xl font-bold text-gray-900 mb-4">
                     Encontre serviços no seu município
                 </h2>
@@ -176,7 +271,8 @@
                     Digite o nome da sua cidade em Goiás para encontrar serviços de apoio próximos a você.
                 </p>
                 
-                <form onsubmit="buscarServicos(event)" class="space-y-4">
+                <!-- Formulário de busca -->
+                <form onsubmit="buscarServicos(event)" class="space-y-4 mb-8">
                     <div>
                         <label for="municipio" class="block text-sm font-medium text-gray-700 mb-2">
                             Município ou CEP
@@ -189,6 +285,7 @@
                             placeholder="Ex: Goiânia"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200 transition-colors"
                             aria-describedby="busca-help">
+                        <!-- Lista de municípios disponíveis -->
                         <datalist id="municipios-goias">
                             <option value="Goiânia">
                             <option value="Aparecida de Goiânia">
@@ -200,6 +297,19 @@
                             <option value="Formosa">
                             <option value="Trindade">
                             <option value="Jataí">
+                            <option value="Águas Lindas de Goiás">
+                            <option value="Valparaíso de Goiás">
+                            <option value="Senador Canedo">
+                            <option value="Novo Gama">
+                            <option value="Santo Antônio do Descoberto">
+                            <option value="Planaltina">
+                            <option value="Mineiros">
+                            <option value="Caldas Novas">
+                            <option value="Porangatu">
+                            <option value="Uruaçu">
+                            <option value="Goianésia">
+                            <option value="Inhumas">
+                            <option value="Cidade de Goiás">
                         </datalist>
                         <p id="busca-help" class="text-sm text-gray-500 mt-2">
                             Também é possível buscar por CEP.
@@ -213,16 +323,22 @@
                     </button>
                 </form>
                 
-                <div id="resultado-busca" class="hidden mt-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
-                    <p class="text-sm text-gray-700">
-                        <strong>Resultados para <span id="municipio-resultado"></span>:</strong> 
-                        Esta funcionalidade será implementada na próxima fase.
-                    </p>
+                <!-- Resultados da busca com lista e mapa -->
+                <div id="resultado-busca" class="hidden grid md:grid-cols-2 gap-6">
+                    <!-- Coluna da esquerda: Lista de serviços -->
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4" id="municipio-resultado"></h3>
+                        <div id="lista-servicos" class="space-y-4"></div>
+                    </div>
+                    <!-- Coluna da direita: Mapa interativo -->
+                    <div>
+                        <div id="map-container"></div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Seus Direitos - Destaque -->
+        <!-- Seção de Direitos Garantidos por Lei -->
         <section class="py-16 bg-gradient-to-br from-purple-50 to-pink-50" aria-labelledby="direitos-title">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -235,6 +351,7 @@
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <!-- Card: Lei Maria da Penha -->
                     <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">⚖️ Lei Maria da Penha (Lei 11.340/2006)</h3>
                         <ul class="space-y-2 text-gray-700">
@@ -248,6 +365,7 @@
                         </ul>
                     </div>
 
+                    <!-- Card: Outros Direitos Legais -->
                     <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">📜 Outros Direitos Legais</h3>
                         <ul class="space-y-2 text-gray-700">
@@ -262,6 +380,7 @@
                     </div>
                 </div>
 
+                <!-- Card: Direitos Trabalhistas -->
                 <div class="bg-gradient-to-r from-green-500 to-teal-500 rounded-xl shadow-lg p-8 text-white text-center">
                     <h3 class="text-2xl font-bold mb-3">💼 Direitos Trabalhistas para Mulheres em Situação de Violência</h3>
                     <div class="grid md:grid-cols-3 gap-4 mt-6">
@@ -282,7 +401,7 @@
             </div>
         </section>
 
-        <!-- Serviços Completos -->
+        <!-- Seção de Serviços Completos (continuação no próximo bloco devido ao tamanho) -->
         <section id="servicos" class="py-16 bg-white" aria-labelledby="servicos-title">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -300,7 +419,8 @@
                         🛡️ Segurança e Justiça
                     </h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <article class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-red-500">
+                        <!-- DEAM -->
+                        <article class="service-card bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-md p-6 border-t-4 border-red-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">📋 DEAM - Delegacia da Mulher</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Registro de ocorrências, investigação de crimes, encaminhamento para medidas protetivas.<br>
@@ -312,19 +432,21 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-purple-500">
+                        <!-- Defensoria Pública -->
+                        <article class="service-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border-t-4 border-purple-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">⚖️ Defensoria Pública</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Assistência jurídica gratuita, acompanhamento em processos, orientação legal.<br>
                                 <strong>Atende:</strong> Todas as mulheres que necessitam de defesa jurídica.<br>
-                                <strong>Gratuito:</strong> 100% gratuito.
+                                <strong>Gratuito:</strong> 100% gratuito para quem tem renda até 3 salários mínimos.
                             </p>
                             <button onclick="scrollToSection('formulario')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                                 Buscar defensoria
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-indigo-500">
+                        <!-- Juizado Especial -->
+                        <article class="service-card bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-6 border-t-4 border-indigo-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">👩‍⚖️ Juizado Especial - Violência Doméstica</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Julgamento de processos de violência doméstica, concessão de medidas protetivas.<br>
@@ -336,7 +458,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-orange-500">
+                        <!-- Ministério Público -->
+                        <article class="service-card bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border-t-4 border-orange-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏛️ Ministério Público</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Fiscaliza cumprimento de medidas protetivas, propõe ações penais, defende direitos coletivos.<br>
@@ -348,24 +471,26 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-pink-500">
+                        <!-- Patrulha Maria da Penha -->
+                        <article class="service-card bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 border-t-4 border-pink-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🔐 Patrulha Maria da Penha</h4>
                             <p class="text-gray-700 mb-4">
-                                <strong>O que faz:</strong> Fiscalização do cumprimento de medidas protetivas, ronda preventiva.<br>
+                                <strong>O que faz:</strong> Fiscalização do cumprimento de medidas protetivas, ronda preventiva, monitoramento ativo.<br>
                                 <strong>Atende:</strong> Mulheres com medidas protetivas concedidas.<br>
-                                <strong>Disponível:</strong> Em diversas cidades de Goiás.
+                                <strong>Disponível:</strong> Em diversas cidades de Goiás com crescimento de 139% no acompanhamento.
                             </p>
                             <button onclick="scrollToSection('formulario')" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                                 Solicitar patrulha
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-rose-500">
+                        <!-- Casas de Acolhimento -->
+                        <article class="service-card bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-md p-6 border-t-4 border-rose-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏠 Casas de Acolhimento</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Abrigamento temporário seguro, sigiloso, com equipe multidisciplinar.<br>
                                 <strong>Atende:</strong> Mulheres em risco iminente de morte.<br>
-                                <strong>Endereço:</strong> Sigiloso para proteção.
+                                <strong>Endereço:</strong> Sigiloso para proteção (acesso via DEAM/Defensoria).
                             </p>
                             <button onclick="scrollToSection('formulario')" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                                 Solicitar acolhimento
@@ -380,7 +505,8 @@
                         🏥 Saúde Física e Mental
                     </h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <article class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-green-500">
+                        <!-- UBS -->
+                        <article class="service-card bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-md p-6 border-t-4 border-green-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏥 UBS - Unidades Básicas de Saúde</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Atendimento médico geral, enfermagem, vacinação, pré-natal, exames.<br>
@@ -392,7 +518,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-teal-500">
+                        <!-- CAPS -->
+                        <article class="service-card bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl shadow-md p-6 border-t-4 border-teal-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🧠 CAPS - Atenção Psicossocial</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Atendimento psicológico e psiquiátrico, terapia em grupo, acompanhamento medicamentoso.<br>
@@ -404,11 +531,12 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-cyan-500">
+                        <!-- Odontologia -->
+                        <article class="service-card bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow-md p-6 border-t-4 border-cyan-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🦷 Odontologia - SUS e Faculdade Universo</h4>
                             <p class="text-gray-700 mb-4">
-                                <strong>O que faz:</strong> Tratamento odontológico completo, emergências, reabilitação oral.<br>
-                                <strong>Parceria especial:</strong> Faculdade Universo oferece atendimento prioritário a vítimas de violência.<br>
+                                <strong>O que faz:</strong> Tratamento odontológico completo, emergências, reabilitação oral e facial.<br>
+                                <strong>Parceria especial:</strong> Faculdade Universo oferece atendimento prioritário a vítimas de violência (PL 4.440/2024).<br>
                                 <strong>Gratuito:</strong> Pelo SUS e projeto parceiro.
                             </p>
                             <button onclick="scrollToSection('formulario')" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
@@ -416,7 +544,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-emerald-500">
+                        <!-- Hospitais -->
+                        <article class="service-card bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-md p-6 border-t-4 border-emerald-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏥 Hospitais e Prontos-Socorros</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Atendimento emergencial, exames de corpo delito, profilaxia pós-exposição.<br>
@@ -428,7 +557,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-lime-50 to-lime-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-lime-500">
+                        <!-- Farmácia Popular -->
+                        <article class="service-card bg-gradient-to-br from-lime-50 to-lime-100 rounded-xl shadow-md p-6 border-t-4 border-lime-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">💊 Farmácia Popular</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Medicamentos gratuitos ou com desconto.<br>
@@ -440,7 +570,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-green-500">
+                        <!-- Saúde da Mulher -->
+                        <article class="service-card bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-md p-6 border-t-4 border-green-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🤰 Saúde da Mulher - Pré-natal e Planejamento</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Pré-natal, planejamento familiar, prevenção de câncer, saúde reprodutiva.<br>
@@ -460,7 +591,8 @@
                         🤝 Assistência Social e Benefícios
                     </h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <article class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-blue-500">
+                        <!-- CRAS -->
+                        <article class="service-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border-t-4 border-blue-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏛️ CRAS - Centro de Referência</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Cadastro em programas sociais, orientação, oficinas, benefícios eventuais.<br>
@@ -472,10 +604,11 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-indigo-500">
+                        <!-- CREAS -->
+                        <article class="service-card bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-6 border-t-4 border-indigo-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🆘 CREAS - Atendimento Especializado</h4>
                             <p class="text-gray-700 mb-4">
-                                <strong>O que faz:</strong> Atendimento psicossocial a mulheres em violência, acompanhamento familiar.<br>
+                                <strong>O que faz:</strong> Atendimento psicossocial a mulheres em violência, acompanhamento familiar, porta de entrada para benefícios.<br>
                                 <strong>Atende:</strong> Situações de violência e violação de direitos.<br>
                                 <strong>Equipe:</strong> Psicólogos, assistentes sociais, advogados.
                             </p>
@@ -484,7 +617,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-sky-500">
+                        <!-- Bolsa Família -->
+                        <article class="service-card bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow-md p-6 border-t-4 border-sky-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">💰 Bolsa Família e Benefícios</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Transferência de renda para famílias em vulnerabilidade.<br>
@@ -496,7 +630,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-violet-500">
+                        <!-- Restaurantes Populares -->
+                        <article class="service-card bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow-md p-6 border-t-4 border-violet-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🍲 Restaurantes Populares e Bancos de Alimentos</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Refeições a preço social ou gratuitas, distribuição de alimentos.<br>
@@ -508,19 +643,21 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-purple-500">
+                        <!-- Aluguel Social -->
+                        <article class="service-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border-t-4 border-purple-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏠 Aluguel Social e Moradia</h4>
                             <p class="text-gray-700 mb-4">
-                                <strong>O que faz:</strong> Auxílio aluguel, cadastro em programas habitacionais.<br>
+                                <strong>O que faz:</strong> Auxílio de R$ 350,00 mensais por até 18 meses para mulheres em situação de violência.<br>
                                 <strong>Atende:</strong> Famílias sem moradia ou em situação precária.<br>
-                                <strong>Programas:</strong> Minha Casa Minha Vida, aluguel social municipal.
+                                <strong>Programas:</strong> Goiás Social / Agehab, Minha Casa Minha Vida.
                             </p>
                             <button onclick="scrollToSection('formulario')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
                                 Solicitar auxílio
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-fuchsia-500">
+                        <!-- Tarifa Social -->
+                        <article class="service-card bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow-md p-6 border-t-4 border-fuchsia-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">⚡ Tarifa Social de Energia</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Desconto na conta de luz para famílias de baixa renda.<br>
@@ -540,7 +677,8 @@
                         📚 Educação, Qualificação e Trabalho
                     </h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <article class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-amber-500">
+                        <!-- EJA -->
+                        <article class="service-card bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-md p-6 border-t-4 border-amber-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">📖 EJA - Educação de Jovens e Adultos</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Conclusão do ensino fundamental e médio para adultos.<br>
@@ -552,7 +690,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-yellow-500">
+                        <!-- PRONATEC -->
+                        <article class="service-card bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl shadow-md p-6 border-t-4 border-yellow-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🎓 PRONATEC - Cursos Técnicos</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Cursos técnicos e de qualificação profissional gratuitos.<br>
@@ -564,7 +703,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-orange-500">
+                        <!-- SINE -->
+                        <article class="service-card bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-md p-6 border-t-4 border-orange-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">💼 SINE - Sistema Nacional de Emprego</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Intermediação de emprego, cursos de qualificação, seguro-desemprego.<br>
@@ -576,10 +716,11 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-red-500">
+                        <!-- Mulheres Mil -->
+                        <article class="service-card bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-md p-6 border-t-4 border-red-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">👩‍💼 Programa Mulheres Mil</h4>
                             <p class="text-gray-700 mb-4">
-                                <strong>O que faz:</strong> Capacitação profissional para mulheres em vulnerabilidade.<br>
+                                <strong>O que faz:</strong> Capacitação profissional para mulheres em vulnerabilidade - 475 vagas disponíveis.<br>
                                 <strong>Atende:</strong> Mulheres com baixa escolaridade e renda.<br>
                                 <strong>Oferece:</strong> Cursos + orientação + inclusão produtiva.
                             </p>
@@ -588,7 +729,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-pink-500">
+                        <!-- MEI -->
+                        <article class="service-card bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 border-t-4 border-pink-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏪 MEI - Microempreendedor Individual</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Formalização de pequenos negócios com benefícios previdenciários.<br>
@@ -600,7 +742,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-rose-500">
+                        <!-- SENAC/SENAI -->
+                        <article class="service-card bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-md p-6 border-t-4 border-rose-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🎯 Programa de Qualificação do SENAC/SENAI</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Cursos profissionalizantes gratuitos através de programas sociais.<br>
@@ -620,7 +763,8 @@
                         💃 Cultura, Esporte e Bem-estar
                     </h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <article class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-pink-500">
+                        <!-- Dança -->
+                        <article class="service-card bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 border-t-4 border-pink-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">💃 Grupos de Dança e Expressão Corporal</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Aulas de dança, teatro, expressão corporal como terapia e fortalecimento.<br>
@@ -632,7 +776,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-purple-500">
+                        <!-- Arte -->
+                        <article class="service-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-md p-6 border-t-4 border-purple-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🎨 Oficinas de Arte e Artesanato</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Oficinas de pintura, artesanato, costura, bijuteria.<br>
@@ -644,7 +789,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-fuchsia-500">
+                        <!-- Esportes -->
+                        <article class="service-card bg-gradient-to-br from-fuchsia-50 to-fuchsia-100 rounded-xl shadow-md p-6 border-t-4 border-fuchsia-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">⚽ Esportes e Atividade Física</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Grupos de caminhada, ginástica, futebol, vôlei em espaços públicos.<br>
@@ -656,7 +802,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-rose-500">
+                        <!-- Bibliotecas -->
+                        <article class="service-card bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-md p-6 border-t-4 border-rose-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">📚 Bibliotecas Públicas e Rodas de Leitura</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Empréstimo de livros, rodas de leitura, contação de histórias.<br>
@@ -668,7 +815,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-pink-500">
+                        <!-- Grupos de Apoio -->
+                        <article class="service-card bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl shadow-md p-6 border-t-4 border-pink-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🎭 Grupos de Apoio e Terapia Comunitária</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Encontros de acolhimento, escuta e fortalecimento mútuo.<br>
@@ -680,7 +828,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-violet-500">
+                        <!-- Práticas Integrativas -->
+                        <article class="service-card bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow-md p-6 border-t-4 border-violet-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🧘 Yoga, Meditação e Práticas Integrativas</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Práticas corporais e meditativas gratuitas pelo SUS.<br>
@@ -700,7 +849,8 @@
                         👶 Apoio para Crianças e Família
                     </h3>
                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <article class="bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-teal-500">
+                        <!-- Creches -->
+                        <article class="service-card bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl shadow-md p-6 border-t-4 border-teal-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏫 Creches e Pré-escolas Públicas</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Educação infantil gratuita para crianças de 0 a 5 anos.<br>
@@ -712,7 +862,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-cyan-500">
+                        <!-- Criança Feliz -->
+                        <article class="service-card bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl shadow-md p-6 border-t-4 border-cyan-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🍼 Programa Criança Feliz</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Visitas domiciliares para orientação sobre desenvolvimento infantil.<br>
@@ -724,7 +875,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-sky-500">
+                        <!-- Contraturno -->
+                        <article class="service-card bg-gradient-to-br from-sky-50 to-sky-100 rounded-xl shadow-md p-6 border-t-4 border-sky-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🎒 Programas de Contraturno Escolar</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Atividades educativas, esportivas e culturais no contraturno.<br>
@@ -736,7 +888,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-blue-500">
+                        <!-- Conselho Tutelar -->
+                        <article class="service-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-md p-6 border-t-4 border-blue-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">👨‍👩‍👧 Conselho Tutelar</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Proteção de direitos de crianças e adolescentes.<br>
@@ -748,7 +901,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-indigo-500">
+                        <!-- Pensão -->
+                        <article class="service-card bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-md p-6 border-t-4 border-indigo-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">💰 Pensão Alimentícia</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Assessoria jurídica para solicitação de pensão.<br>
@@ -760,7 +914,8 @@
                             </button>
                         </article>
 
-                        <article class="bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow-md p-6 hover:shadow-lg transition-all border-t-4 border-violet-500">
+                        <!-- Saúde da Criança -->
+                        <article class="service-card bg-gradient-to-br from-violet-50 to-violet-100 rounded-xl shadow-md p-6 border-t-4 border-violet-500">
                             <h4 class="text-xl font-bold text-gray-900 mb-3">🏥 Saúde da Criança e Vacinação</h4>
                             <p class="text-gray-700 mb-4">
                                 <strong>O que faz:</strong> Acompanhamento pediátrico, vacinação, puericultura.<br>
@@ -776,7 +931,7 @@
             </div>
         </section>
 
-        <!-- Tipos de Violência - Identificação -->
+        <!-- Seção: Tipos de Violência - Identificação -->
         <section class="py-16 bg-gradient-to-br from-red-50 to-orange-50" aria-labelledby="violencia-title">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -789,6 +944,7 @@
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Violência Física -->
                     <article class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">🔴 Violência Física</h3>
                         <p class="text-gray-700 mb-3">
@@ -799,6 +955,7 @@
                         </p>
                     </article>
 
+                    <!-- Violência Psicológica -->
                     <article class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">🟣 Violência Psicológica</h3>
                         <p class="text-gray-700 mb-3">
@@ -809,6 +966,7 @@
                         </p>
                     </article>
 
+                    <!-- Violência Sexual -->
                     <article class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-pink-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">🟣 Violência Sexual</h3>
                         <p class="text-gray-700 mb-3">
@@ -819,6 +977,7 @@
                         </p>
                     </article>
 
+                    <!-- Violência Patrimonial -->
                     <article class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">🟢 Violência Patrimonial</h3>
                         <p class="text-gray-700 mb-3">
@@ -829,6 +988,7 @@
                         </p>
                     </article>
 
+                    <!-- Violência Moral -->
                     <article class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">🔵 Violência Moral</h3>
                         <p class="text-gray-700 mb-3">
@@ -839,6 +999,7 @@
                         </p>
                     </article>
 
+                    <!-- Violência Digital -->
                     <article class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-cyan-500">
                         <h3 class="text-2xl font-bold text-gray-900 mb-3">🔷 Violência Digital</h3>
                         <p class="text-gray-700 mb-3">
@@ -850,6 +1011,7 @@
                     </article>
                 </div>
 
+                <!-- Alerta Final -->
                 <div class="mt-8 p-6 bg-white rounded-xl shadow-lg border-t-4 border-red-500 text-center">
                     <p class="text-lg text-gray-900 font-bold mb-3">
                         ⚠️ Qualquer um desses tipos de violência é CRIME e você pode denunciar!
@@ -866,7 +1028,7 @@
             </div>
         </section>
 
-        <!-- Formulário -->
+        <!-- Seção: Formulário de Demandas -->
         <section id="formulario" class="py-16 bg-gray-50" aria-labelledby="formulario-title">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border-t-4 border-brand-500">
@@ -878,9 +1040,11 @@
                     </p>
                     
                     <form id="demandas-form" onsubmit="enviarDemanda(event)" class="space-y-8">
+                        <!-- Fieldset: Sobre você -->
                         <fieldset class="border-t pt-6">
                             <legend class="text-xl font-bold text-gray-900 mb-4">Sobre você (opcional)</legend>
                             <div class="space-y-4">
+                                <!-- Faixa de idade -->
                                 <div>
                                     <label for="faixa-idade" class="block text-sm font-medium text-gray-700 mb-2">Faixa de idade</label>
                                     <select id="faixa-idade" name="faixa-idade" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
@@ -893,6 +1057,7 @@
                                     </select>
                                 </div>
                                 
+                                <!-- Município -->
                                 <div>
                                     <label for="municipio-form" class="block text-sm font-medium text-gray-700 mb-2">Município ou CEP (opcional)</label>
                                     <input list="municipios-goias-form" id="municipio-form" type="text" placeholder="Ex: Goiânia ou 74000-000" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
@@ -910,6 +1075,7 @@
                                     </datalist>
                                 </div>
                                 
+                                <!-- Situação de moradia -->
                                 <div>
                                     <label for="moradia" class="block text-sm font-medium text-gray-700 mb-2">Situação de moradia (opcional)</label>
                                     <select id="moradia" name="moradia" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
@@ -925,9 +1091,11 @@
                             </div>
                         </fieldset>
                         
+                        <!-- Fieldset: O que está acontecendo -->
                         <fieldset class="border-t pt-6">
                             <legend class="text-xl font-bold text-gray-900 mb-4">O que está acontecendo?</legend>
                             <div class="space-y-4">
+                                <!-- Tipos de violência -->
                                 <div>
                                     <p class="block text-sm font-medium text-gray-700 mb-3">Tipo(s) de violência (pode marcar mais de uma opção):</p>
                                     <div class="space-y-2">
@@ -958,6 +1126,7 @@
                                     </div>
                                 </div>
                                 
+                                <!-- Descrição -->
                                 <div>
                                     <label for="descricao" class="block text-sm font-medium text-gray-700 mb-2">Se quiser, conte um pouco mais (opcional):</label>
                                     <textarea id="descricao" name="descricao" rows="4" placeholder="Escreva apenas o que se sentir confortável em compartilhar..." class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200" aria-describedby="descricao-help"></textarea>
@@ -966,9 +1135,11 @@
                             </div>
                         </fieldset>
                         
+                        <!-- Fieldset: Urgência -->
                         <fieldset class="border-t pt-6">
                             <legend class="text-xl font-bold text-gray-900 mb-4">Urgência</legend>
                             <div class="space-y-4">
+                                <!-- Perigo agora -->
                                 <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded">
                                     <label for="perigo-agora" class="block text-sm font-medium text-gray-900 mb-2">Você corre perigo agora?</label>
                                     <select id="perigo-agora" name="perigo-agora" onchange="ajustarUrgencia()" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:ring-2 focus:ring-red-200">
@@ -979,6 +1150,7 @@
                                     <p class="text-sm text-red-700 mt-2"><strong>Se você está em perigo agora, ligue 190 imediatamente.</strong></p>
                                 </div>
                                 
+                                <!-- Crianças ou idosas -->
                                 <div>
                                     <label for="criancas-idosas" class="block text-sm font-medium text-gray-700 mb-2">Há crianças ou idosas envolvidas?</label>
                                     <select id="criancas-idosas" name="criancas-idosas" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
@@ -989,6 +1161,7 @@
                                     </select>
                                 </div>
                                 
+                                <!-- Nível de urgência -->
                                 <div>
                                     <label for="nivel-urgencia" class="block text-sm font-medium text-gray-700 mb-2">Nível de urgência:</label>
                                     <select id="nivel-urgencia" name="nivel-urgencia" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-200">
@@ -1000,6 +1173,7 @@
                             </div>
                         </fieldset>
                         
+                        <!-- Botões de ação -->
                         <div class="flex flex-col sm:flex-row gap-4 pt-6">
                             <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 px-6 rounded-lg transition-colors shadow-md focus:ring-4 focus:ring-brand-300">
                                 📤 Enviar (anônimo)
@@ -1009,6 +1183,7 @@
                             </button>
                         </div>
                         
+                        <!-- Aviso de privacidade -->
                         <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded mt-4">
                             <p class="text-sm text-gray-700">
                                 <strong>Privacidade:</strong> Este formulário não guarda dados no seu dispositivo. As informações são usadas apenas para mapear demandas e melhorar o serviço.
@@ -1016,6 +1191,7 @@
                         </div>
                     </form>
                     
+                    <!-- Confirmação de envio -->
                     <div id="confirmacao-envio" class="hidden mt-6 p-6 bg-green-50 border-2 border-green-500 rounded-xl">
                         <h3 class="text-xl font-bold text-green-900 mb-2">✅ Recebemos sua mensagem</h3>
                         <p class="text-gray-700">Obrigada por compartilhar. Sua situação está sendo analisada. Se você marcou urgência alta, priorizaremos o contato com serviços de emergência da sua região.</p>
@@ -1029,11 +1205,13 @@
     <footer class="bg-gray-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <!-- Sobre -->
                 <div>
                     <h3 class="text-lg font-bold mb-3">Juntas Goiás</h3>
                     <p class="text-gray-400 text-sm">Plataforma completa de apoio a mulheres em situação de violência em Goiás.</p>
                 </div>
                 
+                <!-- Emergência -->
                 <div>
                     <h3 class="text-lg font-bold mb-3">Emergência</h3>
                     <ul class="space-y-2 text-sm">
@@ -1044,6 +1222,7 @@
                     </ul>
                 </div>
                 
+                <!-- Navegação -->
                 <div>
                     <h3 class="text-lg font-bold mb-3">Navegação</h3>
                     <ul class="space-y-2 text-sm">
@@ -1052,6 +1231,7 @@
                     </ul>
                 </div>
                 
+                <!-- Segurança -->
                 <div>
                     <h3 class="text-lg font-bold mb-3">Segurança</h3>
                     <p class="text-gray-400 text-sm mb-3">Use sempre navegação anônima. Limpe seu histórico após acessar este site.</p>
@@ -1059,6 +1239,7 @@
                 </div>
             </div>
             
+            <!-- Copyright -->
             <div class="border-t border-gray-800 pt-6 text-center text-sm text-gray-400">
                 <p>&copy; 2025 Juntas Goiás. Projeto de apoio e acolhimento a mulheres.</p>
                 <p class="mt-2">Você tem direitos. Você não está sozinha.</p>
@@ -1066,36 +1247,484 @@
         </div>
     </footer>
 
+    <!-- Leaflet JS para o mapa -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
     <script>
+        // Variável global para armazenar o mapa
+        let map;
+
+        /**
+         * Base de dados completa de serviços por município em Goiás
+         * Dados obtidos da pesquisa detalhada sobre a rede de proteção
+         */
+        const servicosPorMunicipio = {
+            'Goiânia': [
+                {
+                    nome: 'DEAM - Delegacia da Mulher (Setor Central)',
+                    endereco: 'Rua 24, 203, Setor Central',
+                    telefone: '(62) 3201-2801',
+                    coords: [-16.686, -49.264],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'DEAM - Delegacia da Mulher (Região Noroeste)',
+                    endereco: 'Av. do Povo c/ Rua E s/n, Jardim Curitiba II',
+                    telefone: '(62) 3201-6344 / 3201-6332',
+                    coords: [-16.660, -49.283],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública - NUDEM (Unidade Sul)',
+                    endereco: 'Av. Cora Coralina, Setor Sul',
+                    telefone: '(62) 3157-1039',
+                    coords: [-16.713, -49.281],
+                    tipo: 'Justiça'
+                },
+                {
+                    nome: 'Defensoria Pública - Unidade Marista',
+                    endereco: 'Alameda Cel. Joaquim de Bastos, 282, Setor Marista',
+                    telefone: '(62) 3157-1026',
+                    coords: [-16.713, -49.281],
+                    tipo: 'Justiça'
+                },
+                {
+                    nome: 'Centro de Referência da Mulher Cora Coralina',
+                    endereco: 'Rua 74, 423, Setor Central',
+                    telefone: '(62) 3524-2933',
+                    coords: [-16.680, -49.260],
+                    tipo: 'Assistência Social'
+                },
+                {
+                    nome: 'CRAS Vila Isaura',
+                    endereco: 'Rua 09 esq. Rua 12, Vila Isaura',
+                    telefone: '(62) 3524-8514',
+                    coords: [-16.660, -49.283],
+                    tipo: 'Assistência Social'
+                },
+                {
+                    nome: 'CAPS Girassol',
+                    endereco: 'Rua R5, Quadra 07, Setor Oeste',
+                    telefone: '(62) 3524-2489',
+                    coords: [-16.700, -49.290],
+                    tipo: 'Saúde Mental'
+                },
+                {
+                    nome: 'SEMASDH - Secretaria Municipal',
+                    endereco: 'Rua 4, n° 1054, Centro',
+                    telefone: '(62) 3524-1309',
+                    coords: [-16.680, -49.264],
+                    tipo: 'Coordenação'
+                }
+            ],
+            'Anápolis': [
+                {
+                    nome: 'DEAM Anápolis',
+                    endereco: 'Rua Dez de Março, 257, Setor Central',
+                    telefone: '(62) 3328-2731',
+                    coords: [-16.330, -48.953],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Anápolis',
+                    endereco: 'Av Pinheiro Chagas, Quadra 11, Lote 49, nº 43, Jundiaí',
+                    telefone: '(62) 3771-0256',
+                    coords: [-16.330, -48.953],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Aparecida de Goiânia': [
+                {
+                    nome: 'DEAM Aparecida de Goiânia',
+                    endereco: 'Rua Paracatu s/n, Vila Brasília',
+                    telefone: '(62) 3201-2642',
+                    coords: [-16.823, -49.244],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Aparecida de Goiânia',
+                    endereco: 'Av de Furnas, Setor Araguaia',
+                    telefone: '(62) 3157-1010',
+                    coords: [-16.823, -49.244],
+                    tipo: 'Justiça'
+                },
+                {
+                    nome: 'Central de Flagrantes (24h)',
+                    endereco: 'Aparecida de Goiânia',
+                    telefone: '(62) 3201-XXXX',
+                    coords: [-16.823, -49.244],
+                    tipo: 'Emergência'
+                }
+            ],
+            'Águas Lindas de Goiás': [
+                {
+                    nome: 'DEAM Águas Lindas de Goiás',
+                    endereco: 'Quadra Onze s/n Jardim Querência',
+                    telefone: '(61) 3613-0701',
+                    coords: [-15.756, -48.283],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Águas Lindas',
+                    endereco: 'Q 36, Lote 1E, Quadra 53, Jardim Brasília',
+                    telefone: '(62) 3602-1224',
+                    coords: [-15.756, -48.283],
+                    tipo: 'Justiça'
+                },
+                {
+                    nome: 'CAPS II Reviver',
+                    endereco: 'Quadra 06 Lote 03 Setor Águas Lindas II',
+                    telefone: 'Consultar',
+                    coords: [-15.756, -48.283],
+                    tipo: 'Saúde Mental'
+                }
+            ],
+            'Luziânia': [
+                {
+                    nome: 'DEAM Luziânia',
+                    endereco: 'Rua Benedito Pimentel 1, Centro',
+                    telefone: '(61) 3621-4490',
+                    coords: [-16.253, -47.950],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Luziânia',
+                    endereco: 'R Florentino Chaves, QD 73 LT 30, 159, Centro',
+                    telefone: '(62) 3602-1224',
+                    coords: [-16.253, -47.950],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Valparaíso de Goiás': [
+                {
+                    nome: 'DEAM Valparaíso',
+                    endereco: 'Quadra Oito, Etapa A, casa 41 s/n - Valparaiso I',
+                    telefone: '(61) 3629-8246',
+                    coords: [-16.061, -47.982],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'CREAS Valparaíso',
+                    endereco: 'Rua 80',
+                    telefone: '(61) 3624-1618',
+                    coords: [-16.061, -47.982],
+                    tipo: 'Assistência Social'
+                }
+            ],
+            'Catalão': [
+                {
+                    nome: 'DEAM Catalão',
+                    endereco: 'Rua Seis 285, Mãe de Deus',
+                    telefone: '(64) 3441-1622',
+                    coords: [-18.166, -47.947],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Trindade': [
+                {
+                    nome: 'DEAM Trindade',
+                    endereco: 'Alameda Wilsom Torrano 340, Vila Santa Inês',
+                    telefone: '(62) 3505-7539',
+                    coords: [-16.649, -49.489],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Trindade',
+                    endereco: 'Praça Constantino Xavier, Centro',
+                    telefone: 'Consultar',
+                    coords: [-16.649, -49.489],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Senador Canedo': [
+                {
+                    nome: 'DEAM Senador Canedo',
+                    endereco: 'Avenida Dom Emanuel, Santa Genoveva',
+                    telefone: '(62) 3201-2426',
+                    coords: [-16.707, -49.092],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Itumbiara': [
+                {
+                    nome: 'DEAM Itumbiara',
+                    endereco: 'Rua Dom Emanuel, 28, Setor Central',
+                    telefone: '(64) 3404-7711',
+                    coords: [-18.419, -49.215],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Caldas Novas': [
+                {
+                    nome: 'DEAM Caldas Novas',
+                    endereco: 'Avenida Alameda do Contôrno, s/n, Centro',
+                    telefone: '(64) 3454-6640',
+                    coords: [-17.741, -48.626],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Goianésia': [
+                {
+                    nome: 'DEAM Goianésia',
+                    endereco: 'Avenida Brasil, 967, Centro',
+                    telefone: '(62) 3353-1127',
+                    coords: [-15.319, -49.118],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Porangatu': [
+                {
+                    nome: 'DEAM Porangatu',
+                    endereco: 'Rua Quatro 56, Setor Vera Lúcia',
+                    telefone: '(62) 3362-5903',
+                    coords: [-13.440, -49.149],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Uruaçu': [
+                {
+                    nome: 'DEAM Uruaçu',
+                    endereco: 'Avenida Rio Branco 10',
+                    telefone: '(62) 3357-1020',
+                    coords: [-14.526, -49.141],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Formosa': [
+                {
+                    nome: 'DEAM Formosa',
+                    endereco: 'Rua Alves de Castro 82, Centro',
+                    telefone: 'Consultar',
+                    coords: [-15.538, -47.335],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Santo Antônio do Descoberto': [
+                {
+                    nome: 'DEAM Santo Antônio do Descoberto',
+                    endereco: 'Quadra 21/22 s/n - Área Especial',
+                    telefone: '(61) 3626-0421',
+                    coords: [-15.938, -48.256],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Novo Gama': [
+                {
+                    nome: 'DEAM Novo Gama',
+                    endereco: 'Área Especial s/n - Lunabel 3 - A',
+                    telefone: '(61) 3614-2784',
+                    coords: [-16.035, -48.042],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'CEAM Novo Gama',
+                    endereco: 'Qd. 494, Lt. 08, s/n, Pedregal',
+                    telefone: '(61) 3628-1009',
+                    coords: [-16.035, -48.042],
+                    tipo: 'Assistência'
+                }
+            ],
+            'Planaltina': [
+                {
+                    nome: 'DEAM Planaltina',
+                    endereco: 'Quadra 179 s/n - Barrolândia',
+                    telefone: '(61) 3637-8091',
+                    coords: [-15.452, -47.614],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Mineiros': [
+                {
+                    nome: 'DEAM Mineiros',
+                    endereco: 'Avenida Oitava s/n, Setor Costa Nery',
+                    telefone: '(64) 3661-5729',
+                    coords: [-17.569, -52.551],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Inhumas': [
+                {
+                    nome: 'Defensoria Pública Inhumas',
+                    endereco: 'Rua Tóquio, Qd. 1, Lt. 13, Residencial Watanabe',
+                    telefone: '(62) 3157-6195',
+                    coords: [-16.358, -49.497],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Cidade de Goiás': [
+                {
+                    nome: 'CEAM Cidade de Goiás',
+                    endereco: 'Tv. do Carmo, nº 01 - Esquina com Rua da Abadia',
+                    telefone: '(62) 3371-2784',
+                    coords: [-15.936, -50.140],
+                    tipo: 'Assistência'
+                }
+            ]
+        };
+
+        /**
+         * Função de saída rápida para emergências
+         * Limpa dados locais e redireciona para o Google
+         */
         function quickExit() {
+            // Limpa localStorage e sessionStorage se disponível
             if (typeof(Storage) !== "undefined") {
                 localStorage.clear();
                 sessionStorage.clear();
             }
+            
+            // Limpa todos os formulários da página
             const forms = document.querySelectorAll('form');
             forms.forEach(form => form.reset());
+            
+            // Redireciona para o Google
             window.location.replace('https://www.google.com');
         }
         
+        /**
+         * Atalho do teclado ESC para saída rápida
+         */
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 quickExit();
             }
         });
         
+        /**
+         * Função de busca de serviços por município
+         * Exibe lista de serviços e mapa interativo
+         */
         function buscarServicos(event) {
             event.preventDefault();
-            const municipio = document.getElementById('municipio').value;
+            
+            const municipio = document.getElementById('municipio').value.trim();
             const resultado = document.getElementById('resultado-busca');
             const municipioResultado = document.getElementById('municipio-resultado');
             
-            if (municipio.trim() !== '') {
-                municipioResultado.textContent = municipio;
+            if (municipio !== '') {
+                // Atualiza o título dos resultados
+                municipioResultado.textContent = `Resultados para ${municipio}:`;
+                
+                // Busca os serviços do município
+                const servicos = servicosPorMunicipio[municipio] || [];
+                const listaDiv = document.getElementById('lista-servicos');
+                
+                if (servicos.length > 0) {
+                    // Gera HTML para cada serviço encontrado
+                    listaDiv.innerHTML = servicos.map(s => `
+                        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                            <h4 class="font-bold text-gray-900">${s.nome}</h4>
+                            <p class="text-sm text-gray-600 mb-1">${s.tipo}</p>
+                            <p class="text-sm text-gray-700 mb-1">${s.endereco}</p>
+                            <p class="text-sm text-brand-600">📞 ${s.telefone}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    // Mensagem quando não há serviços cadastrados
+                    listaDiv.innerHTML = `
+                        <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                            <p class="text-sm text-gray-700">
+                                <strong>Atenção:</strong> Ainda não temos serviços cadastrados para este município em nosso banco de dados. 
+                                Entre em contato com o <strong>180</strong> (Central de Atendimento à Mulher) para informações sobre serviços disponíveis.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                // Exibe a seção de resultados
                 resultado.classList.remove('hidden');
                 resultado.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Inicializa ou atualiza o mapa
+                inicializarMapa(municipio, servicos);
             }
         }
+
+        /**
+         * Função para inicializar o mapa com Leaflet
+         * @param {string} municipio - Nome do município
+         * @param {Array} servicos - Lista de serviços para adicionar marcadores
+         */
+        function inicializarMapa(municipio, servicos) {
+            const mapContainer = document.getElementById('map-container');
+            
+            // Se o mapa já existe, remove para recriá-lo
+            if (map) {
+                map.remove();
+            }
+            
+            // Coordenadas aproximadas do município (usa primeiro serviço ou coordenadas padrão)
+            const coordsAprox = servicos.length > 0 ? servicos[0].coords : getCoordsAprox(municipio);
+            
+            // Cria o mapa centrado no município
+            map = L.map('map-container').setView(coordsAprox, 13);
+            
+            // Adiciona o tile layer do OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Adiciona marcadores para cada serviço
+            servicos.forEach(s => {
+                const markerIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: #e04d96; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white;">📍</div>`,
+                    iconSize: [30, 30]
+                });
+                
+                L.marker(s.coords, { icon: markerIcon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h4 style="font-weight: bold; margin-bottom: 4px;">${s.nome}</h4>
+                            <p style="font-size: 12px; color: #666; margin-bottom: 4px;">${s.tipo}</p>
+                            <p style="font-size: 12px; margin-bottom: 4px;">${s.endereco}</p>
+                            <p style="font-size: 12px; color: #e04d96; font-weight: 600;">📞 ${s.telefone}</p>
+                        </div>
+                    `);
+            });
+        }
+
+        /**
+         * Função auxiliar para obter coordenadas aproximadas de municípios
+         * @param {string} municipio - Nome do município
+         * @returns {Array} Coordenadas [latitude, longitude]
+         */
+        function getCoordsAprox(municipio) {
+            const coordsMap = {
+                'Goiânia': [-16.68, -49.27],
+                'Anápolis': [-16.33, -48.95],
+                'Aparecida de Goiânia': [-16.82, -49.24],
+                'Águas Lindas de Goiás': [-15.76, -48.28],
+                'Luziânia': [-16.25, -47.95],
+                'Valparaíso de Goiás': [-16.06, -47.98],
+                'Catalão': [-18.17, -47.95],
+                'Porangatu': [-13.44, -49.15],
+                'Trindade': [-16.65, -49.49],
+                'Senador Canedo': [-16.71, -49.09],
+                'Uruaçu': [-14.53, -49.14],
+                'Goianésia': [-15.32, -49.12],
+                'Formosa': [-15.54, -47.34],
+                'Santo Antônio do Descoberto': [-15.94, -48.26],
+                'Novo Gama': [-16.04, -48.04],
+                'Planaltina': [-15.45, -47.61],
+                'Mineiros': [-17.57, -52.55],
+                'Caldas Novas': [-17.74, -48.63],
+                'Itumbiara': [-18.42, -49.22],
+                'Inhumas': [-16.36, -49.50],
+                'Cidade de Goiás': [-15.94, -50.14],
+                'Rio Verde': [-17.79, -50.92],
+                'Jataí': [-17.88, -51.71]
+            };
+            return coordsMap[municipio] || [-16.68, -49.27]; // Default: Goiânia
+        }
         
+        /**
+         * Função para ajustar automaticamente o nível de urgência
+         * Se a pessoa está em perigo agora, marca urgência como "alto"
+         */
         function ajustarUrgencia() {
             const perigoAgora = document.getElementById('perigo-agora').value;
             const nivelUrgencia = document.getElementById('nivel-urgencia');
@@ -1105,23 +1734,105 @@
             }
         }
         
+        /**
+         * Função para limpar o formulário de demandas
+         */
         function limparFormulario() {
             const form = document.getElementById('demandas-form');
             form.reset();
+            
             const confirmacao = document.getElementById('confirmacao-envio');
             confirmacao.classList.add('hidden');
         }
         
+        /**
+         * Função para enviar o formulário de demandas para o backend
+         */
         function enviarDemanda(event) {
             event.preventDefault();
-            const confirmacao = document.getElementById('confirmacao-envio');
-            confirmacao.classList.remove('hidden');
-            confirmacao.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            setTimeout(function() {
-                limparFormulario();
-            }, 2000);
+
+            const form = document.getElementById('demandas-form');
+            const data = {};
+
+            // Coleta os dados dos campos de seleção e texto
+            data['faixa_idade'] = document.getElementById('faixa-idade').value;
+            data['municipio_cep'] = document.getElementById('municipio-form').value;
+            data['moradia'] = document.getElementById('moradia').value;
+            data['descricao'] = document.getElementById('descricao').value;
+            data['perigo_agora'] = document.getElementById('perigo-agora').value;
+            data['criancas_idosas'] = document.getElementById('criancas-idosas').value;
+            data['nivel_urgencia'] = document.getElementById('nivel-urgencia').value;
+
+            // Coleta os tipos de violência marcados
+            const violencias = [];
+            document.querySelectorAll('input[name="violencia"]:checked').forEach(checkbox => {
+                violencias.push(checkbox.value);
+            });
+            data['tipos_violencia'] = violencias;
+
+            // Converte os dados para uma string formatada para a mensagem
+            let mensagemFormatada = `
+Faixa de Idade: ${data.faixa_idade || 'Não informado'}
+Município/CEP: ${data.municipio_cep || 'Não informado'}
+Situação de Moradia: ${data.moradia || 'Não informado'}
+Tipos de Violência: ${data.tipos_violencia.length > 0 ? data.tipos_violencia.join(', ') : 'Não informado'}
+Perigo Agora: ${data.perigo_agora || 'Não informado'}
+Crianças/Idosas Envolvidas: ${data.criancas_idosas || 'Não informado'}
+Nível de Urgência: ${data.nivel_urgencia || 'Não informado'}
+
+Descrição:
+${data.descricao || 'Nenhuma descrição fornecida.'}
+            `.trim();
+
+            // Dados a serem enviados para a API
+            const apiData = {
+                nome: "Anônimo", // Valor padrão
+                email: "anonimo@juntasgoias.com.br", // Valor padrão
+                telefone: "Não informado", // Valor padrão
+                mensagem: mensagemFormatada
+            };
+
+            $.ajax({
+                url: '../backend/demandas_api.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(apiData),
+                dataType: 'json',
+                success: function(response) {
+                    const confirmacao = document.getElementById('confirmacao-envio');
+                    if (response.success) {
+                        confirmacao.innerHTML = `
+                            <h3 class="text-xl font-bold text-green-900 mb-2">✅ Recebemos sua mensagem</h3>
+                            <p class="text-gray-700">${response.message}</p>
+                        `;
+                        confirmacao.classList.remove('hidden');
+                        limparFormulario();
+                    } else {
+                        confirmacao.innerHTML = `
+                            <h3 class="text-xl font-bold text-red-900 mb-2">❌ Erro ao enviar</h3>
+                            <p class="text-gray-700">${response.message}</p>
+                        `;
+                        confirmacao.classList.remove('hidden');
+                    }
+                    confirmacao.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Erro ao enviar demanda:", status, error);
+                    const confirmacao = document.getElementById('confirmacao-envio');
+                    confirmacao.innerHTML = `
+                        <h3 class="text-xl font-bold text-red-900 mb-2">❌ Erro de conexão</h3>
+                        <p class="text-gray-700">Não foi possível conectar ao servidor. Tente novamente mais tarde.</p>
+                    `;
+                    confirmacao.classList.remove('hidden');
+                    confirmacao.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
         }
         
+        /**
+         * Função para rolar suavemente até uma seção específica
+         * @param {string} sectionId - ID da seção de destino
+         */
         function scrollToSection(sectionId) {
             const section = document.getElementById(sectionId);
             if (section) {
@@ -1129,6 +1840,9 @@
             }
         }
         
+        /**
+         * Limpa formulários ao sair da página (segurança adicional)
+         */
         window.addEventListener('beforeunload', function() {
             const forms = document.querySelectorAll('form');
             forms.forEach(form => form.reset());
