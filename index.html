@@ -120,7 +120,7 @@
 
         /* 1. Define a animação de fade para 3 banners com crossfade perfeito */
         @keyframes fadeCarousel {
-            /* Banner visível - mantém opacity 1 durante 26.67% do tempo (~4s) */
+            /* Banner visível - mantém opacity 1 during 26.67% do tempo (~4s) */
             0% { opacity: 1; }
             26.67% { opacity: 1; }
             
@@ -211,6 +211,92 @@
             z-index: 4; /* Fica acima de todos os banners */
             pointer-events: none; /* Não interfere com cliques */
         }
+
+        @keyframes panicPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes panicBlink {
+            0% { box-shadow: 0 0 0 rgba(224,77,150,0); transform: scale(1); }
+            40% { box-shadow: 0 0 10px rgba(224,77,150,0.22); transform: scale(1.05); }
+            60% { box-shadow: 0 0 6px rgba(224,77,150,0.16); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 rgba(224,77,150,0); transform: scale(1); }
+        }
+
+        /* Combina pulso e 'piscar' (glow) para chamar atenção */
+        .panic-animation {
+            animation: panicBlink 1.6s ease-in-out infinite;
+            will-change: transform, box-shadow;
+        }
+
+        /* Pausa animação enquanto arrastando */
+        .panic-animation.dragging {
+            animation-play-state: paused !important;
+            transition: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Respeita preferência do usuário por reduzir movimento */
+        @media (prefers-reduced-motion: reduce) {
+            .panic-animation { animation: none !important; }
+        }
+
+        /* Imagem do botão - ajuste inicial removido (usamos tamanho via container) */
+        #panic-button img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 9999px; /* deixa o botão redondo */
+        }
+
+        /* Estilos para o botão do pânico em dispositivos móveis */
+        @media (max-width: 768px) {
+            #panic-button {
+                position: fixed;
+                bottom: 5%;
+                right: 0;
+                width: 50%;
+                transform: translateX(50%); /* Move o botão para o canto da tela */
+                transition: transform 0.3s ease;
+            }
+
+            #panic-button:active {
+                transform: translateX(0); /* Afasta o botão ao tocar */
+            }
+
+            #panic-button img {
+                width: 100%; /* Garante que a imagem preencha a largura do botão */
+                height: auto;
+            }
+        }
+
+        /* Estilos para o botão do pânico */
+        #panic-button {
+            position: fixed;
+            cursor: grab;
+            z-index: 1000; /* Garante que o botão fique acima de outros elementos */
+            width: 200px; /* Aumentado: tamanho inicial do botão */
+            height: 200px;
+            bottom: 20px;
+            right: 20px;
+            transition: none; /* Remove a transição para permitir arrastar suavemente */
+            touch-action: none; /* Evita gestos padrões durante arraste */
+            display: block; /* garante que border-radius afete o elemento */
+            border-radius: 9999px; /* arredonda o container para o glow seguir o círculo */
+            background: transparent; /* evita fundo quadrado visível */
+            overflow: visible; /* permite box-shadow externo */
+        }
+
+        #panic-button:active {
+            cursor: grabbing;
+        }
+
+        #panic-button img {
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased">
@@ -220,7 +306,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center justify-between flex-wrap gap-4">
                 <div class="flex items-center gap-4">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-brand-600">Juntas Goiás</h1>
+                    <img src="LOGOJUNTAS.png" alt="Logo Juntas Goiás" class="h-16 sm:h-20" />
                     <!-- Aviso de segurança para desktop -->
                     <p class="hidden sm:block text-sm text-gray-600 bg-yellow-50 px-3 py-1 rounded-md border border-yellow-200">
                         🔒 Use navegação anônima para maior segurança
@@ -241,6 +327,129 @@
         </div>
     </header>
 
+    <!-- Botão do pânico -->
+    <a href="backend/panico_api.php" id="panic-button" class="panic-animation" role="button" aria-label="Botão de pânico" tabindex="0">
+        <img src="botao_socorro.png" alt="Botão de pânico">
+    </a>
+
+    <script>
+        (function(){
+            const btn = document.getElementById('panic-button');
+            if(!btn) return;
+            const MOBILE_BREAK = 768;
+
+            // Helper to apply saved position only on wide screens
+            function applySavedPosition(){
+                const saved = localStorage.getItem('panicButtonPos');
+                if (saved && window.innerWidth > MOBILE_BREAK) {
+                    try {
+                        const pos = JSON.parse(saved);
+                        if (typeof pos.left === 'number' && typeof pos.top === 'number') {
+                            btn.style.left = pos.left + 'px';
+                            btn.style.top = pos.top + 'px';
+                            btn.style.right = 'auto';
+                            btn.style.bottom = 'auto';
+                        }
+                    } catch(e) { /* ignore */ }
+                } else {
+                    // Mobile or no saved position: use default mobile placement
+                    btn.style.right = '0';
+                    btn.style.bottom = '5%';
+                    btn.style.left = 'auto';
+                    btn.style.top = 'auto';
+                    // Keep transform from CSS (translateX(50%)) for mobile
+                }
+            }
+
+            applySavedPosition();
+
+            // Re-apply on resize: if switching to mobile, reset; if switching to desktop, restore saved
+            let resizeTimeout;
+            window.addEventListener('resize', function(){
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(applySavedPosition, 150);
+            });
+
+            let isDragging = false;
+            let startX=0, startY=0, origX=0, origY=0;
+
+            function clamp(value, min, max){ return Math.min(max, Math.max(min, value)); }
+
+            function onPointerDown(e){
+                // only allow dragging on non-mobile layout if the current layout shows the draggable button
+                const p = (e.touches && e.touches[0]) || e;
+                isDragging = true;
+                btn.style.cursor = 'grabbing';
+                btn.classList.add('dragging');
+                startX = p.clientX;
+                startY = p.clientY;
+                const rect = btn.getBoundingClientRect();
+                origX = rect.left;
+                origY = rect.top;
+                btn.dataset.dragged = '0';
+                e.preventDefault && e.preventDefault();
+            }
+
+            function onPointerMove(e){
+                if(!isDragging) return;
+                const p = (e.touches && e.touches[0]) || e;
+                const dx = p.clientX - startX;
+                const dy = p.clientY - startY;
+                const newLeft = clamp(origX + dx, 0, window.innerWidth - btn.offsetWidth);
+                const newTop = clamp(origY + dy, 0, window.innerHeight - btn.offsetHeight);
+                btn.style.left = newLeft + 'px';
+                btn.style.top = newTop + 'px';
+                btn.style.right = 'auto';
+                btn.style.bottom = 'auto';
+                btn.dataset.dragged = '1';
+                e.preventDefault && e.preventDefault();
+            }
+
+            function onPointerUp(e){
+                if(!isDragging) return;
+                isDragging = false;
+                btn.style.cursor = 'grab';
+                btn.classList.remove('dragging');
+                // salva posição apenas se em tela larga
+                if (window.innerWidth > MOBILE_BREAK) {
+                    const rect = btn.getBoundingClientRect();
+                    localStorage.setItem('panicButtonPos', JSON.stringify({ left: rect.left, top: rect.top }));
+                } else {
+                    // remove posição salva para evitar ficar fora da tela no mobile
+                    localStorage.removeItem('panicButtonPos');
+                }
+                e.preventDefault && e.preventDefault();
+            }
+
+            // Mouse
+            btn.addEventListener('mousedown', onPointerDown, {passive:false});
+            window.addEventListener('mousemove', onPointerMove, {passive:false});
+            window.addEventListener('mouseup', onPointerUp, {passive:false});
+
+            // Touch
+            btn.addEventListener('touchstart', onPointerDown, {passive:false});
+            window.addEventListener('touchmove', onPointerMove, {passive:false});
+            window.addEventListener('touchend', onPointerUp, {passive:false});
+
+            // Se o usuário clicar/tocar sem arrastar, permita navegação. Mas se houve arraste, previne o click.
+            btn.addEventListener('click', function(e){
+                if (btn.dataset.dragged === '1') {
+                    e.preventDefault();
+                    btn.dataset.dragged = '0';
+                }
+            });
+
+            // Permitir reposicionar via teclado: reset para canto direito com R
+            window.addEventListener('keydown', function(e){
+                if(e.key === 'r' || e.key === 'R'){
+                    localStorage.removeItem('panicButtonPos');
+                    applySavedPosition();
+                }
+            });
+
+        })();
+    </script>
+
     <!-- Espaçamento para compensar o header fixo -->
     <div class="h-24 sm:h-20"></div>
 
@@ -256,7 +465,7 @@
             
             <!-- Conteúdo principal (fica acima dos banners) -->
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-brand-200">
+                <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border-2 border-brand-200 mt-8 sm:mt-12">
                     <h2 id="hero-title" class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
                         Se você está em risco agora
                     </h2>
@@ -1253,9 +1462,10 @@
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
                 <!-- Sobre -->
                 <div>
-                    <img src="logopre.png" alt="Logo Juntas Goiás" class="h-12 mb-4">
                     <h3 class="text-lg font-bold mb-3">Juntas Goiás</h3>
                     <p class="text-gray-400 text-sm">Plataforma completa de apoio a mulheres em situação de violência em Goiás.</p>
+                    <!-- Logomarca PRE (PNG preferencial no root do projeto, SVG fallback se necessário) -->
+                    <img src="logopre.png" alt="PRE - Governo de Goiás" class="mx-auto sm:mx-0 h-12 sm:h-16 mt-4" onerror="this.onerror=null; this.src='assets/images/logopre.svg'">
                 </div>
                 
                 <!-- Emergência -->
@@ -1300,16 +1510,12 @@
     crossorigin=""></script>
 
     <script>
-        // ============================================
-        // VARIÁVEIS GLOBAIS E INICIALIZAÇÃO
-        // ============================================
-        
-        // Variável global para armazenar o mapa Leaflet
+        // Variável global para armazenar o mapa
         let map;
 
         /**
          * Base de dados completa de serviços por município em Goiás
-         * Estrutura: município => array de objetos com informações dos serviços
+         * Dados obtidos da pesquisa detalhada sobre a rede de proteção
          */
         const servicosPorMunicipio = {
             'Goiânia': [
@@ -1408,40 +1614,234 @@
                     coords: [-16.823, -49.244],
                     tipo: 'Emergência'
                 }
+            ],
+            'Águas Lindas de Goiás': [
+                {
+                    nome: 'DEAM Águas Lindas de Goiás',
+                    endereco: 'Quadra Onze s/n Jardim Querência',
+                    telefone: '(61) 3613-0701',
+                    coords: [-15.756, -48.283],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Águas Lindas',
+                    endereco: 'Q 36, Lote 1E, Quadra 53, Jardim Brasília',
+                    telefone: '(62) 3602-1224',
+                    coords: [-15.756, -48.283],
+                    tipo: 'Justiça'
+                },
+                {
+                    nome: 'CAPS II Reviver',
+                    endereco: 'Quadra 06 Lote 03 Setor Águas Lindas II',
+                    telefone: 'Consultar',
+                    coords: [-15.756, -48.283],
+                    tipo: 'Saúde Mental'
+                }
+            ],
+            'Luziânia': [
+                {
+                    nome: 'DEAM Luziânia',
+                    endereco: 'Rua Benedito Pimentel 1, Centro',
+                    telefone: '(61) 3621-4490',
+                    coords: [-16.253, -47.950],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Luziânia',
+                    endereco: 'R Florentino Chaves, QD 73 LT 30, 159, Centro',
+                    telefone: '(62) 3602-1224',
+                    coords: [-16.253, -47.950],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Valparaíso de Goiás': [
+                {
+                    nome: 'DEAM Valparaíso',
+                    endereco: 'Quadra Oito, Etapa A, casa 41 s/n - Valparaiso I',
+                    telefone: '(61) 3629-8246',
+                    coords: [-16.061, -47.982],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'CREAS Valparaíso',
+                    endereco: 'Rua 80',
+                    telefone: '(61) 3624-1618',
+                    coords: [-16.061, -47.982],
+                    tipo: 'Assistência Social'
+                }
+            ],
+            'Catalão': [
+                {
+                    nome: 'DEAM Catalão',
+                    endereco: 'Rua Seis 285, Mãe de Deus',
+                    telefone: '(64) 3441-1622',
+                    coords: [-18.166, -47.947],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Trindade': [
+                {
+                    nome: 'DEAM Trindade',
+                    endereco: 'Alameda Wilsom Torrano 340, Vila Santa Inês',
+                    telefone: '(62) 3505-7539',
+                    coords: [-16.649, -49.489],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'Defensoria Pública Trindade',
+                    endereco: 'Praça Constantino Xavier, Centro',
+                    telefone: 'Consultar',
+                    coords: [-16.649, -49.489],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Senador Canedo': [
+                {
+                    nome: 'DEAM Senador Canedo',
+                    endereco: 'Avenida Dom Emanuel, Santa Genoveva',
+                    telefone: '(62) 3201-2426',
+                    coords: [-16.707, -49.092],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Itumbiara': [
+                {
+                    nome: 'DEAM Itumbiara',
+                    endereco: 'Rua Dom Emanuel, 28, Setor Central',
+                    telefone: '(64) 3404-7711',
+                    coords: [-18.419, -49.215],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Caldas Novas': [
+                {
+                    nome: 'DEAM Caldas Novas',
+                    endereco: 'Avenida Alameda do Contôrno, s/n, Centro',
+                    telefone: '(64) 3454-6640',
+                    coords: [-17.741, -48.626],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Goianésia': [
+                {
+                    nome: 'DEAM Goianésia',
+                    endereco: 'Avenida Brasil, 967, Centro',
+                    telefone: '(62) 3353-1127',
+                    coords: [-15.319, -49.118],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Porangatu': [
+                {
+                    nome: 'DEAM Porangatu',
+                    endereco: 'Rua Quatro 56, Setor Vera Lúcia',
+                    telefone: '(62) 3362-5903',
+                    coords: [-13.440, -49.149],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Uruaçu': [
+                {
+                    nome: 'DEAM Uruaçu',
+                    endereco: 'Avenida Rio Branco 10',
+                    telefone: '(62) 3357-1020',
+                    coords: [-14.526, -49.141],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Formosa': [
+                {
+                    nome: 'DEAM Formosa',
+                    endereco: 'Rua Alves de Castro 82, Centro',
+                    telefone: 'Consultar',
+                    coords: [-15.538, -47.335],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Santo Antônio do Descoberto': [
+                {
+                    nome: 'DEAM Santo Antônio do Descoberto',
+                    endereco: 'Quadra 21/22 s/n - Área Especial',
+                    telefone: '(61) 3626-0421',
+                    coords: [-15.938, -48.256],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Novo Gama': [
+                {
+                    nome: 'DEAM Novo Gama',
+                    endereco: 'Área Especial s/n - Lunabel 3 - A',
+                    telefone: '(61) 3614-2784',
+                    coords: [-16.035, -48.042],
+                    tipo: 'Segurança'
+                },
+                {
+                    nome: 'CEAM Novo Gama',
+                    endereco: 'Qd. 494, Lt. 08, s/n, Pedregal',
+                    telefone: '(61) 3628-1009',
+                    coords: [-16.035, -48.042],
+                    tipo: 'Assistência'
+                }
+            ],
+            'Planaltina': [
+                {
+                    nome: 'DEAM Planaltina',
+                    endereco: 'Quadra 179 s/n - Barrolândia',
+                    telefone: '(61) 3637-8091',
+                    coords: [-15.452, -47.614],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Mineiros': [
+                {
+                    nome: 'DEAM Mineiros',
+                    endereco: 'Avenida Oitava s/n, Setor Costa Nery',
+                    telefone: '(64) 3661-5729',
+                    coords: [-17.569, -52.551],
+                    tipo: 'Segurança'
+                }
+            ],
+            'Inhumas': [
+                {
+                    nome: 'Defensoria Pública Inhumas',
+                    endereco: 'Rua Tóquio, Qd. 1, Lt. 13, Residencial Watanabe',
+                    telefone: '(62) 3157-6195',
+                    coords: [-16.358, -49.497],
+                    tipo: 'Justiça'
+                }
+            ],
+            'Cidade de Goiás': [
+                {
+                    nome: 'CEAM Cidade de Goiás',
+                    endereco: 'Tv. do Carmo, nº 01 - Esquina com Rua da Abadia',
+                    telefone: '(62) 3371-2784',
+                    coords: [-15.936, -50.140],
+                    tipo: 'Assistência'
+                }
             ]
-            // Adicione outros municípios conforme necessário
         };
 
-        // ============================================
-        // FUNÇÕES DE SEGURANÇA E NAVEGAÇÃO
-        // ============================================
-        
         /**
-         * Função de saída rápida para situações de emergência
-         * Limpa todos os dados temporários e redireciona para o Google
+         * Função de saída rápida para emergências
+         * Limpa dados locais e redireciona para o Google
          */
         function quickExit() {
-            // Tenta limpar localStorage e sessionStorage se disponível
+            // Limpa localStorage e sessionStorage se disponível
             if (typeof(Storage) !== "undefined") {
-                try {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                } catch(e) {
-                    console.warn('Não foi possível limpar o armazenamento:', e);
-                }
+                localStorage.clear();
+                sessionStorage.clear();
             }
             
             // Limpa todos os formulários da página
             const forms = document.querySelectorAll('form');
             forms.forEach(form => form.reset());
             
-            // Redireciona para o Google (substitui a página atual no histórico)
+            // Redireciona para o Google
             window.location.replace('https://www.google.com');
         }
         
         /**
-         * Atalho de teclado: ESC para saída rápida
-         * Ativa a função quickExit() quando a tecla ESC é pressionada
+         * Atalho do teclado ESC para saída rápida
          */
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
@@ -1450,24 +1850,8 @@
         });
         
         /**
-         * Função para rolar suavemente até uma seção específica da página
-         * @param {string} sectionId - ID da seção de destino (sem o #)
-         */
-        function scrollToSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-        
-        // ============================================
-        // FUNÇÕES DO MAPA E BUSCA DE SERVIÇOS
-        // ============================================
-        
-        /**
-         * Busca serviços disponíveis no município informado
-         * Exibe lista de serviços e mapa interativo com marcadores
-         * @param {Event} event - Evento do formulário de busca
+         * Função de busca de serviços por município
+         * Exibe lista de serviços e mapa interativo
          */
         function buscarServicos(event) {
             event.preventDefault();
@@ -1480,7 +1864,7 @@
                 // Atualiza o título dos resultados
                 municipioResultado.textContent = `Resultados para ${municipio}:`;
                 
-                // Busca os serviços do município no banco de dados
+                // Busca os serviços do município
                 const servicos = servicosPorMunicipio[municipio] || [];
                 const listaDiv = document.getElementById('lista-servicos');
                 
@@ -1516,26 +1900,25 @@
         }
 
         /**
-         * Inicializa o mapa interativo com Leaflet
-         * Adiciona marcadores para cada serviço encontrado
+         * Função para inicializar o mapa com Leaflet
          * @param {string} municipio - Nome do município
-         * @param {Array} servicos - Lista de serviços com coordenadas
+         * @param {Array} servicos - Lista de serviços para adicionar marcadores
          */
         function inicializarMapa(municipio, servicos) {
             const mapContainer = document.getElementById('map-container');
             
-            // Remove o mapa existente se houver
+            // Se o mapa já existe, remove para recriá-lo
             if (map) {
                 map.remove();
             }
             
-            // Define coordenadas aproximadas do município
+            // Coordenadas aproximadas do município (usa primeiro serviço ou coordenadas padrão)
             const coordsAprox = servicos.length > 0 ? servicos[0].coords : getCoordsAprox(municipio);
             
             // Cria o mapa centrado no município
             map = L.map('map-container').setView(coordsAprox, 13);
             
-            // Adiciona camada de tiles do OpenStreetMap
+            // Adiciona o tile layer do OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
@@ -1562,8 +1945,7 @@
         }
 
         /**
-         * Retorna coordenadas aproximadas de municípios conhecidos
-         * Usado como fallback quando não há serviços cadastrados
+         * Função auxiliar para obter coordenadas aproximadas de municípios
          * @param {string} municipio - Nome do município
          * @returns {Array} Coordenadas [latitude, longitude]
          */
@@ -1593,15 +1975,11 @@
                 'Rio Verde': [-17.79, -50.92],
                 'Jataí': [-17.88, -51.71]
             };
-            return coordsMap[municipio] || [-16.68, -49.27]; // Padrão: Goiânia
+            return coordsMap[municipio] || [-16.68, -49.27]; // Default: Goiânia
         }
         
-        // ============================================
-        // FUNÇÕES DO FORMULÁRIO DE DEMANDAS
-        // ============================================
-        
         /**
-         * Ajusta automaticamente o nível de urgência baseado na resposta
+         * Função para ajustar automaticamente o nível de urgência
          * Se a pessoa está em perigo agora, marca urgência como "alto"
          */
         function ajustarUrgencia() {
@@ -1614,8 +1992,7 @@
         }
         
         /**
-         * Limpa completamente o formulário de demandas
-         * Remove também a mensagem de confirmação se estiver visível
+         * Função para limpar o formulário de demandas
          */
         function limparFormulario() {
             const form = document.getElementById('demandas-form');
@@ -1626,9 +2003,7 @@
         }
         
         /**
-         * Envia o formulário de demandas para o backend via AJAX
-         * Coleta todos os dados do formulário e envia em formato JSON
-         * @param {Event} event - Evento do formulário
+         * Função para enviar o formulário de demandas para o backend
          */
         function enviarDemanda(event) {
             event.preventDefault();
@@ -1636,7 +2011,7 @@
             const form = document.getElementById('demandas-form');
             const data = {};
 
-            // Coleta dados dos campos de seleção e texto
+            // Coleta os dados dos campos de seleção e texto
             data['faixa_idade'] = document.getElementById('faixa-idade').value;
             data['municipio_cep'] = document.getElementById('municipio-form').value;
             data['moradia'] = document.getElementById('moradia').value;
@@ -1645,14 +2020,14 @@
             data['criancas_idosas'] = document.getElementById('criancas-idosas').value;
             data['nivel_urgencia'] = document.getElementById('nivel-urgencia').value;
 
-            // Coleta os tipos de violência marcados (checkboxes)
+            // Coleta os tipos de violência marcados
             const violencias = [];
             document.querySelectorAll('input[name="violencia"]:checked').forEach(checkbox => {
                 violencias.push(checkbox.value);
             });
             data['tipos_violencia'] = violencias;
 
-            // Formata os dados para envio em texto estruturado
+            // Converte os dados para uma string formatada para a mensagem
             let mensagemFormatada = `
 Faixa de Idade: ${data.faixa_idade || 'Não informado'}
 Município/CEP: ${data.municipio_cep || 'Não informado'}
@@ -1666,15 +2041,14 @@ Descrição:
 ${data.descricao || 'Nenhuma descrição fornecida.'}
             `.trim();
 
-            // Prepara dados para envio à API (com valores padrão para anonimato)
+            // Dados a serem enviados para a API
             const apiData = {
-                nome: "Anônimo",
-                email: "anonimo@juntasgoias.com.br",
-                telefone: "Não informado",
+                nome: "Anônimo", // Valor padrão
+                email: "anonimo@juntasgoias.com.br", // Valor padrão
+                telefone: "Não informado", // Valor padrão
                 mensagem: mensagemFormatada
             };
 
-            // Envia dados via AJAX usando jQuery
             $.ajax({
                 url: '../backend/demandas_api.php',
                 method: 'POST',
@@ -1712,13 +2086,19 @@ ${data.descricao || 'Nenhuma descrição fornecida.'}
             });
         }
         
-        // ============================================
-        // EVENT LISTENERS E LIMPEZA
-        // ============================================
+        /**
+         * Função para rolar suavemente até uma seção específica
+         * @param {string} sectionId - ID da seção de destino
+         */
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
         
         /**
          * Limpa formulários ao sair da página (segurança adicional)
-         * Previne que dados sensíveis fiquem armazenados
          */
         window.addEventListener('beforeunload', function() {
             const forms = document.querySelectorAll('form');
