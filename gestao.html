@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Juntas Goiás</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <style>
+        /* Estilos personalizados */
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        
+        /* Animação de loading */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .loading { animation: spin 1s linear infinite; }
+        
+        /* Sidebar fixa */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 16rem;
+            background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+            overflow-y: auto;
+            z-index: 40;
+            transition: transform 0.3s;
+        }
+        
+        .sidebar-mobile-hidden {
+            transform: translateX(-100%);
+        }
+        
+        /* Conteúdo principal com margem para sidebar */
+        .main-content {
+            margin-left: 16rem;
+            min-height: 100vh;
+            background: #f9fafb;
+        }
+        
+        /* Menu item ativo */
+        .nav-link.active {
+            background: linear-gradient(90deg, #db2777 0%, #9333ea 100%);
+            border-left: 4px solid #ffffff;
+        }
+        
+        /* Badge de notificação */
+        .badge-notification {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-weight: bold;
+        }
+        
+        /* Card com hover */
+        .stat-card {
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Alerta de pânico piscando */
+        @keyframes blink-alert {
+            0%, 100% { background-color: #fee2e2; border-color: #dc2626; }
+            50% { background-color: #fef2f2; border-color: #f87171; }
+        }
+        .alert-panic {
+            animation: blink-alert 1s infinite;
+        }
+        
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; }
+            .main-content { margin-left: 0; }
+        }
+        
+        /* Preview de imagem */
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .status-pendente { background: #fef3c7; color: #92400e; }
+        .status-em_andamento { background: #dbeafe; color: #1e40af; }
+        .status-resolvido { background: #d1fae5; color: #065f46; }
+        .status-cancelado { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- ========================================= -->
+    <!-- TELA DE LOGIN -->
+    <!-- ========================================= -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-500 to-purple-600 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-white text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Painel Administrativo</h1>
+                <p class="text-gray-600 mt-2">Juntas Goiás - Gestão</p>
+            </div>
+
+            <!-- Formulário de Login -->
+            <form id="form-login" class="space-y-6">
+                <div>
+                    <label for="usuario" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2"></i>Usuário
+                    </label>
+                    <input 
+                        type="text" 
+                        id="usuario" 
+                        name="usuario"
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition"
+                        placeholder="Digite seu usuário">
+                </div>
+
+                <div>
+                    <label for="senha" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2"></i>Senha
+                    </label>
+                    <input 
+                        type="password" 
+                        id="senha" 
+                        name="senha"
+                        required
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition"
+                        placeholder="Digite sua senha">
+                </div>
+
+                <!-- Mensagem de erro -->
+                <div id="login-error" class="hidden bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                    <p class="text-red-800 text-sm flex items-center">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <span id="login-error-text"></span>
+                    </p>
+                </div>
+
+                <!-- Botão de login -->
+                <button 
+                    type="submit" 
+                    id="btn-login"
+                    class="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold py-3 rounded-lg hover:from-pink-700 hover:to-purple-700 transition duration-300 flex items-center justify-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    <span id="btn-login-text">Entrar</span>
+                    <i class="fas fa-spinner fa-spin ml-2 hidden" id="btn-login-loading"></i>
+                </button>
+            </form>
+
+            <!-- Rodapé -->
+            <p class="text-center text-sm text-gray-500 mt-6">
+                Juntas Goiás © 2025 - Sistema Seguro
+            </p>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- PAINEL PRINCIPAL (após login) -->
+    <!-- ========================================= -->
+    <div id="dashboard-screen" class="hidden">
+        
+        <!-- Sidebar (Menu Lateral) -->
+        <aside id="sidebar" class="sidebar">
+            <!-- Logo do sistema -->
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-heart text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-lg">Juntas Goiás</h2>
+                        <p class="text-gray-400 text-xs">Painel Admin</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu de navegação -->
+            <nav class="p-4 space-y-2">
+                <a href="#" data-section="dashboard" class="nav-link active flex items-center space-x-3 px-4 py-3 rounded-lg text-white hover:bg-gray-700 transition">
+                    <i class="fas fa-chart-line w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="#" data-section="demandas" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-white hover:bg-gray-700 transition relative">
+                    <i class="fas fa-inbox w-5"></i>
+                    <span>Demandas</span>
+                    <span id="badge-demandas" class="badge-notification hidden">0</span>
+                </a>
+                
+                <a href="#" data-section="alertas" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-white hover:bg-gray-700 transition relative">
+                    <i class="fas fa-exclamation-triangle w-5"></i>
+                    <span>Alertas de Pânico</span>
+                    <span id="badge-alertas" class="badge-notification hidden">0</span>
+                </a>
+                
+                <a href="#" data-section="servicos" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-white hover:bg-gray-700 transition">
+                    <i class="fas fa-hands-helping w-5"></i>
+                    <span>Serviços</span>
+                </a>
+                
+                <a href="#" data-section="banners" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg text-white hover:bg-gray-700 transition">
+                    <i class="fas fa-images w-5"></i>
+                    <span>Banners</span>
+                </a>
+            </nav>
+
+            <!-- Informações do usuário logado -->
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 bg-gray-900">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white font-bold" id="user-avatar">
+                            A
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-sm font-semibold truncate" id="user-name">Admin</p>
+                            <p class="text-gray-400 text-xs">Administrador</p>
+                        </div>
+                    </div>
+                    <button onclick="fazerLogout()" class="text-gray-400 hover:text-white transition" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Header do painel -->
+            <header class="bg-white shadow-sm sticky top-0 z-30 border-b border-gray-200">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <button id="btn-toggle-sidebar" class="md:hidden text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900" id="page-title">Dashboard</h1>
+                            <p class="text-sm text-gray-600" id="page-subtitle">Visão geral do sistema</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <!-- Relógio em tempo real -->
+                        <div class="hidden md:flex items-center space-x-2 text-gray-600">
+                            <i class="fas fa-clock"></i>
+                            <span id="current-time" class="text-sm font-mono">00:00:00</span>
+                        </div>
+                        <!-- Botão de atualizar -->
+                        <button id="btn-refresh" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700" title="Atualizar dados">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Container das seções -->
+            <div class="p-6">
+
+                <!-- ========================================= -->
+                <!-- SEÇÃO: DASHBOARD -->
+                <!-- ========================================= -->
+                <section id="section-dashboard" class="content-section">
+                    <!-- Cards de estatísticas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Total de Demandas -->
+                        <div class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-pink-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-inbox text-pink-600 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold text-gray-900" id="stat-total-demandas">0</span>
+                            </div>
+                            <h3 class="text-gray-600 font-semibold">Total de Demandas</h3>
+                            <p class="text-sm text-gray-500 mt-1" id="stat-demandas-hoje">+0 hoje</p>
+                        </div>
+
+                        <!-- Demandas Pendentes -->
+                        <div class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold text-gray-900" id="stat-pendentes">0</span>
+                            </div>
+                            <h3 class="text-gray-600 font-semibold">Pendentes</h3>
+                            <p class="text-sm text-gray-500 mt-1">Aguardando análise</p>
+                        </div>
+
+                        <!-- Em Andamento -->
+                        <div class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-spinner text-blue-600 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold text-gray-900" id="stat-em-andamento">0</span>
+                            </div>
+                            <h3 class="text-gray-600 font-semibold">Em Andamento</h3>
+                            <p class="text-sm text-gray-500 mt-1">Sendo atendidas</p>
+                        </div>
+
+                        <!-- Resolvidas -->
+                        <div class="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                </div>
+                                <span class="text-3xl font-bold text-gray-900" id="stat-resolvidos">0</span>
+                            </div>
+                            <h3 class="text-gray-600 font-semibold">Resolvidas</h3>
+                            <p class="text-sm text-gray-500 mt-1">Concluídas</p>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos e últimas demandas -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Gráfico de demandas por dia -->
+                        <div class="bg-white rounded-xl shadow-md p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Demandas nos Últimos 7 Dias</h3>
+                            <canvas id="chart-demandas-dia"></canvas>
+                        </div>
+
+                        <!-- Gráfico de status -->
+                        <div class="bg-white rounded-xl shadow-md p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Distribuição por Status</h3>
+                            <canvas id="chart-status"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Demandas Recentes -->
+                    <div class="bg-white rounded-xl shadow-md p-6 mt-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-bold text-gray-900">Demandas Recentes</h3>
+                            <button onclick="navegarParaSecao('demandas')" class="text-pink-600 hover:text-pink-700 font-semibold text-sm">
+                                Ver todas <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                        <div id="lista-demandas-recentes" class="space-y-4">
+                            <!-- Será preenchido via JavaScript -->
+                            <div class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-2"></i>
+                                <p>Carregando demandas...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================= -->
+                <!-- SEÇÃO: DEMANDAS -->
+                <!-- ========================================= -->
+                <section id="section-demandas" class="content-section hidden">
+                    <!-- Filtros -->
+                    <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Filtros</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                                <select id="filtro-status" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                                    <option value="">Todos</option>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="em_andamento">Em Andamento</option>
+                                    <option value="resolvido">Resolvido</option>
+                                    <option value="cancelado">Cancelado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lida</label>
+                                <select id="filtro-lida" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                                    <option value="">Todas</option>
+                                    <option value="0">Não lida</option>
+                                    <option value="1">Lida</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
+                                <input type="text" id="filtro-busca" placeholder="Nome, email..." class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="filtrarDemandas()" class="w-full px-6 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition">
+                                    <i class="fas fa-search mr-2"></i>Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela de demandas -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b-2 border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Contato</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Descrição</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Data</th>
+                                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-demandas" class="divide-y divide-gray-200">
+                                    <!-- Será preenchido via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================= -->
+                <!-- SEÇÃO: ALERTAS DE PÂNICO -->
+                <!-- ========================================= -->
+                <section id="section-alertas" class="content-section hidden">
+                    <!-- Alerta sobre atualização automática -->
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
+                            <div>
+                                <p class="font-semibold text-blue-900">Monitoramento em Tempo Real</p>
+                                <p class="text-sm text-blue-700">Esta página atualiza automaticamente a cada 10 segundos</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de alertas ativos -->
+                    <div id="container-alertas-ativos" class="space-y-4">
+                        <!-- Será preenchido via JavaScript -->
+                    </div>
+
+                    <!-- Sem alertas -->
+                    <div id="sem-alertas" class="bg-white rounded-xl shadow-md p-12 text-center">
+                        <i class="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Nenhum alerta ativo</h3>
+                        <p class="text-gray-600">Não há alertas de pânico no momento</p>
+                    </div>
+                </section>
+
+                <!-- ========================================= -->
+                <!-- SEÇÃO: SERVIÇOS -->
+                <!-- ========================================= -->
+                <section id="section-servicos" class="content-section hidden">
+                    <!-- Botão novo serviço -->
+                    <div class="mb-6 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-900">Gerenciar Serviços</h3>
+                        <button onclick="abrirModalServico()" id="btn-novo-servico" class="px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold rounded-lg hover:from-pink-700 hover:to-purple-700 transition">
+                            <i class="fas fa-plus mr-2"></i>Novo Serviço
+                        </button>
+                    </div>
+
+                    <!-- Grid de serviços -->
+                    <div id="lista-servicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Será preenchido via JavaScript -->
+                    </div>
+                </section>
+
+                <!-- ========================================= -->
+                <!-- SEÇÃO: BANNERS -->
+                <!-- ========================================= -->
+                <section id="section-banners" class="content-section hidden">
+                    <!-- Aviso importante sobre dimensões -->
+                    <div class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-4 mt-1"></i>
+                            <div class="flex-1">
+                                <h3 class="font-bold text-yellow-900 text-lg mb-2">📐 Dimensões Recomendadas dos Banners</h3>
+                                <ul class="space-y-2 text-yellow-800">
+                                    <li><strong>Resolução ideal:</strong> 1920px × 600px (proporção 3.2:1)</li>
+                                    <li><strong>Resolução mínima:</strong> 1280px × 400px</li>
+                                    <li><strong>Tamanho máximo:</strong> 5 MB por arquivo</li>
+                                    <li><strong>Formatos aceitos:</strong> JPG, PNG, WebP</li>
+                                    <li><strong>Importante:</strong> Use imagens de alta qualidade para melhor visualização em telas grandes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid com os 3 banners -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Banner 1 -->
+                        <div class="bg-white rounded-xl shadow-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-900 text-lg">Banner 1</h3>
+                                <span class="px-3 py-1 bg-pink-100 text-pink-800 text-xs font-bold rounded-full">Principal</span>
+                            </div>
+                            <div class="mb-4 bg-gray-100 rounded-lg h-40 flex items-center justify-center overflow-hidden">
+                                <img id="preview-banner1" src="banner1.png" alt="Banner 1" class="image-preview">
+                            </div>
+                            <input type="file" id="upload-banner1" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('upload-banner1').click()" class="w-full px-4 py-3 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition">
+                                <i class="fas fa-upload mr-2"></i>Alterar Banner 1
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2 text-center">Última atualização: <span id="data-banner1">-</span></p>
+                        </div>
+
+                        <!-- Banner 2 -->
+                        <div class="bg-white rounded-xl shadow-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-900 text-lg">Banner 2</h3>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-bold rounded-full">Secundário</span>
+                            </div>
+                            <div class="mb-4 bg-gray-100 rounded-lg h-40 flex items-center justify-center overflow-hidden">
+                                <img id="preview-banner2" src="banner2.png" alt="Banner 2" class="image-preview">
+                            </div>
+                            <input type="file" id="upload-banner2" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('upload-banner2').click()" class="w-full px-4 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition">
+                                <i class="fas fa-upload mr-2"></i>Alterar Banner 2
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2 text-center">Última atualização: <span id="data-banner2">-</span></p>
+                        </div>
+
+                        <!-- Banner 3 -->
+                        <div class="bg-white rounded-xl shadow-md p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-gray-900 text-lg">Banner 3</h3>
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">Terciário</span>
+                            </div>
+                            <div class="mb-4 bg-gray-100 rounded-lg h-40 flex items-center justify-center overflow-hidden">
+                                <img id="preview-banner3" src="banner3.png" alt="Banner 3" class="image-preview">
+                            </div>
+                            <input type="file" id="upload-banner3" accept="image/*" class="hidden">
+                            <button onclick="document.getElementById('upload-banner3').click()" class="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                                <i class="fas fa-upload mr-2"></i>Alterar Banner 3
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2 text-center">Última atualização: <span id="data-banner3">-</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Informações adicionais -->
+                    <div class="bg-gray-50 rounded-xl p-6 mt-6">
+                        <h4 class="font-bold text-gray-900 mb-3">💡 Dicas para Banners Eficazes</h4>
+                        <ul class="space-y-2 text-gray-700 text-sm">
+                            <li><i class="fas fa-check-circle text-green-600 mr-2"></i>Use imagens que transmitam acolhimento e segurança</li>
+                            <li><i class="fas fa-check-circle text-green-600 mr-2"></i>Evite textos muito pequenos na imagem (prefira adicionar texto via HTML/CSS)</li>
+                            <li><i class="fas fa-check-circle text-green-600 mr-2"></i>Teste em diferentes tamanhos de tela após o upload</li>
+                            <li><i class="fas fa-check-circle text-green-600 mr-2"></i>Mantenha coerência visual entre os 3 banners</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- MODAL: Detalhes da Demanda -->
+    <!-- ========================================= -->
+    <div id="modal-demanda" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-pink-600 to-purple-600 text-white p-6 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold">Detalhes da Demanda</h2>
+                    <button onclick="fecharModal('modal-demanda')" class="text-white hover:text-gray-200 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="modal-demanda-conteudo" class="p-6">
+                <!-- Será preenchido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- MODAL: Formulário de Serviço -->
+    <!-- ========================================= -->
+    <div id="modal-servico" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-pink-600 to-purple-600 text-white p-6 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <h2 id="modal-servico-titulo" class="text-2xl font-bold">Novo Serviço</h2>
+                    <button onclick="fecharModal('modal-servico')" class="text-white hover:text-gray-200 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <form id="form-servico" class="p-6 space-y-4">
+                <input type="hidden" id="servico-id">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Título *</label>
+                    <input type="text" id="servico-titulo" required class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Descrição *</label>
+                    <textarea id="servico-descricao" required rows="3" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Ícone do Serviço</label>
+                        <input type="file" id="servico-icone" accept="image/*" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Categoria</label>
+                        <select id="servico-categoria" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                            <option value="seguranca">Segurança</option>
+                            <option value="saude">Saúde</option>
+                            <option value="assistencia">Assistência Social</option>
+                            <option value="educacao">Educação</option>
+                            <option value="trabalho">Trabalho</option>
+                            <option value="cultura">Cultura</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Telefone</label>
+                        <input type="text" id="servico-telefone" placeholder="(62) 99999-9999" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                        <input type="email" id="servico-email" placeholder="contato@servico.com" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Horário de Funcionamento</label>
+                    <input type="text" id="servico-horario" placeholder="Seg-Sex: 8h às 18h" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Endereço</label>
+                    <input type="text" id="servico-endereco" placeholder="Rua Exemplo, 123" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Link/Site</label>
+                    <input type="url" id="servico-link" placeholder="https://exemplo.com" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="servico-ativo" checked class="w-5 h-5 text-pink-600 rounded focus:ring-pink-500">
+                    <label for="servico-ativo" class="text-sm font-semibold text-gray-700">Serviço ativo (visível no site)</label>
+                </div>
+
+                <div class="flex space-x-4 pt-4">
+                    <button type="submit" class="flex-1 px-6 py-3 bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold rounded-lg hover:from-pink-700 hover:to-purple-700 transition">
+                        <i class="fas fa-save mr-2"></i>Salvar
+                    </button>
+                    <button type="button" onclick="fecharModal('modal-servico')" class="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- JAVASCRIPT PRINCIPAL -->
+    <!-- ========================================= -->
+    <script>
+        // ============================================
+        // CONFIGURAÇÕES GLOBAIS
+        // ============================================
+        
+        const API_BASE = './backend/'; // Caminho das APIs PHP
+        
+        // Estado global da aplicação
+        const AppState = {
+            usuarioLogado: null,
+            secaoAtual: 'dashboard',
+            demandas: [],
+            servicos: [],
+            alertas: [],
+            intervaloAlertas: null // Para atualização automática
+        };
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Painel Administrativo - Inicializando...');
+            
+            verificarSessao();
+            configurarEventListeners();
+            atualizarRelogio();
+            setInterval(atualizarRelogio, 1000);
+        });
+
+        // ============================================
+        // AUTENTICAÇÃO
+        // ============================================
+        
+        /**
+         * Verifica se há sessão ativa
+         */
+        async function verificarSessao() {
+            try {
+                const response = await fetch(API_BASE + 'login.php?action=check');
+                const data = await response.json();
+                
+                if (data.logado) {
+                    AppState.usuarioLogado = data.admin;
+                    mostrarDashboard();
+                    carregarDadosIniciais();
+                } else {
+                    mostrarLogin();
+                }
+            } catch (error) {
+                console.error('Erro ao verificar sessão:', error);
+                mostrarLogin();
+            }
+        }
+
+        /**
+         * Processa o formulário de login
+         */
+        document.getElementById('form-login')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const usuario = document.getElementById('usuario').value;
+            const senha = document.getElementById('senha').value;
+            const btnLogin = document.getElementById('btn-login');
+            const btnText = document.getElementById('btn-login-text');
+            const btnLoading = document.getElementById('btn-login-loading');
+            const errorDiv = document.getElementById('login-error');
+            
+            // Mostra loading
+            btnLogin.disabled = true;
+            btnText.textContent = 'Entrando...';
+            btnLoading.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch(API_BASE + 'login.php?action=login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    AppState.usuarioLogado = data.admin;
+                    mostrarDashboard();
+                    carregarDadosIniciais();
+                } else {
+                    mostrarErroLogin(data.mensagem || 'Erro ao fazer login');
+                }
+            } catch (error) {
+                console.error('Erro ao fazer login:', error);
+                mostrarErroLogin('Erro de conexão. Tente novamente.');
+            } finally {
+                btnLogin.disabled = false;
+                btnText.textContent = 'Entrar';
+                btnLoading.classList.add('hidden');
+            }
+        });
+
+        /**
+         * Mostra mensagem de erro no login
+         */
+        function mostrarErroLogin(mensagem) {
+            const errorDiv = document.getElementById('login-error');
+            const errorText = document.getElementById('login-error-text');
+            
+            errorText.textContent = mensagem;
+            errorDiv.classList.remove('hidden');
+        }
+
+        /**
+         * Faz logout do sistema
+         */
+        async function fazerLogout() {
+            if (!confirm('Deseja realmente sair do painel?')) return;
+            
+            try {
+                await fetch(API_BASE + 'login.php?action=logout', { method: 'POST' });
+                
+                // Para o monitoramento de alertas
+                if (AppState.intervaloAlertas) {
+                    clearInterval(AppState.intervaloAlertas);
+                }
+                
+                AppState.usuarioLogado = null;
+                mostrarLogin();
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+        }
+
+        // ============================================
+        // NAVEGAÇÃO
+        // ============================================
+        
+        function mostrarLogin() {
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('dashboard-screen').classList.add('hidden');
+        }
+
+        function mostrarDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.remove('hidden');
+            
+            if (AppState.usuarioLogado) {
+                const inicial = AppState.usuarioLogado.nome.charAt(0).toUpperCase();
+                document.getElementById('user-avatar').textContent = inicial;
+                document.getElementById('user-name').textContent = AppState.usuarioLogado.nome;
+            }
+            
+            navegarParaSecao('dashboard');
+        }
+
+        function navegarParaSecao(secao) {
+            console.log('Navegando para:', secao);
+            
+            // Remove active de todos os links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Adiciona active no link atual
+            const linkAtivo = document.querySelector(`[data-section="${secao}"]`);
+            if (linkAtivo) {
+                linkAtivo.classList.add('active');
+            }
+            
+            // Esconde todas as seções
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Mostra a seção atual
+            const secaoElement = document.getElementById(`section-${secao}`);
+            if (secaoElement) {
+                secaoElement.classList.remove('hidden');
+            }
+            
+            // Atualiza título
+            const titulos = {
+                'dashboard': ['Dashboard', 'Visão geral do sistema'],
+                'demandas': ['Demandas', 'Gerenciar mensagens e solicitações'],
+                'alertas': ['Alertas de Pânico', 'Monitoramento em tempo real'],
+                'servicos': ['Serviços', 'Gerenciar serviços do site'],
+                'banners': ['Banners', 'Gerenciar imagens do carrossel']
+            };
+            
+            if (titulos[secao]) {
+                document.getElementById('page-title').textContent = titulos[secao][0];
+                document.getElementById('page-subtitle').textContent = titulos[secao][1];
+            }
+            
+            AppState.secaoAtual = secao;
+            carregarDadosSecao(secao);
+        }
+
+        function configurarEventListeners() {
+            // Navegação do menu
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const secao = this.dataset.section;
+                    navegarParaSecao(secao);
+                });
+            });
+            
+            // Botão de refresh
+            document.getElementById('btn-refresh')?.addEventListener('click', function() {
+                carregarDadosSecao(AppState.secaoAtual);
+            });
+            
+            // Toggle sidebar mobile
+            document.getElementById('btn-toggle-sidebar')?.addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('sidebar-mobile-hidden');
+            });
+            
+            // Upload de banners
+            document.getElementById('upload-banner1')?.addEventListener('change', function() {
+                fazerUploadBanner(1, this.files[0]);
+            });
+            document.getElementById('upload-banner2')?.addEventListener('change', function() {
+                fazerUploadBanner(2, this.files[0]);
+            });
+            document.getElementById('upload-banner3')?.addEventListener('change', function() {
+                fazerUploadBanner(3, this.files[0]);
+            });
+            
+            // Form de serviço
+            document.getElementById('form-servico')?.addEventListener('submit', salvarServico);
+        }
+
+        function atualizarRelogio() {
+            const agora = new Date();
+            const horas = String(agora.getHours()).padStart(2, '0');
+            const minutos = String(agora.getMinutes()).padStart(2, '0');
+            const segundos = String(agora.getSeconds()).padStart(2, '0');
+            
+            const elementoRelogio = document.getElementById('current-time');
+            if (elementoRelogio) {
+                elementoRelogio.textContent = `${horas}:${minutos}:${segundos}`;
+            }
+        }
+
+        // ============================================
+        // CARREGAMENTO DE DADOS
+        // ============================================
+        
+        async function carregarDadosIniciais() {
+            console.log('Carregando dados iniciais...');
+            carregarDadosSecao('dashboard');
+        }
+
+        async function carregarDadosSecao(secao) {
+            console.log('Carregando dados da seção:', secao);
+            
+            switch(secao) {
+                case 'dashboard':
+                    await carregarDashboard();
+                    break;
+                case 'demandas':
+                    await carregarDemandas();
+                    break;
+                case 'alertas':
+                    await carregarAlertas();
+                    iniciarMonitoramentoAlertas();
+                    break;
+                case 'servicos':
+                    await carregarServicos();
+                    break;
+                case 'banners':
+                    // Banners já são exibidos, apenas carrega datas
+                    break;
+            }
+        }
+
+        async function carregarDashboard() {
+            try {
+                const response = await fetch(API_BASE + 'dashboard_api.php?action=resumo');
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    const resumo = data.resumo;
+                    
+                    document.getElementById('stat-total-demandas').textContent = resumo.demandas.total || 0;
+                    document.getElementById('stat-pendentes').textContent = resumo.demandas.pendentes || 0;
+                    document.getElementById('stat-em-andamento').textContent = resumo.demandas.em_andamento || 0;
+                    document.getElementById('stat-resolvidos').textContent = resumo.demandas.resolvidos || 0;
+                    document.getElementById('stat-demandas-hoje').textContent = `+${resumo.demandas.hoje || 0} hoje`;
+                    
+                    const badge = document.getElementById('badge-demandas');
+                    if (resumo.demandas.pendentes > 0) {
+                        badge.textContent = resumo.demandas.pendentes;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+                
+                const responseDemandas = await fetch(API_BASE + 'dashboard_api.php?action=demandas_recentes&limite=5');
+                const dataDemandas = await responseDemandas.json();
+                
+                if (dataDemandas.sucesso) {
+                    renderizarDemandasRecentes(dataDemandas.demandas);
+                }
+                
+                await carregarGraficos();
+                
+            } catch (error) {
+                console.error('Erro ao carregar dashboard:', error);
+            }
+        }
+
+        function renderizarDemandasRecentes(demandas) {
+            const container = document.getElementById('lista-demandas-recentes');
+            
+            if (demandas.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-3xl mb-2"></i>
+                        <p>Nenhuma demanda encontrada</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = demandas.map(demanda => `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3">
+                            <span class="status-badge status-${demanda.status}">${traduzirStatus(demanda.status)}</span>
+                            <h4 class="font-semibold text-gray-900">${escapeHtml(demanda.faixa_idade || 'Anônimo')}</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">${escapeHtml(demanda.municipio_form || 'Não informado')}</p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            <i class="far fa-clock mr-1"></i>
+                            ${demanda.tempo_decorrido || formatarData(demanda.data_envio)}
+                        </p>
+                    </div>
+                    <button onclick="visualizarDemanda(${demanda.id})" class="ml-4 px-4 py-2 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors">
+                        <i class="fas fa-eye mr-2"></i>Ver
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function carregarGraficos() {
+            try {
+                const responseDia = await fetch(API_BASE + 'dashboard_api.php?action=grafico_demandas&tipo=semana');
+                const dataDia = await responseDia.json();
+                
+                if (dataDia.sucesso) {
+                    renderizarGraficoDemandas(dataDia.dados);
+                }
+                
+                const responseResumo = await fetch(API_BASE + 'dashboard_api.php?action=resumo');
+                const dataResumo = await responseResumo.json();
+                
+                if (dataResumo.sucesso) {
+                    renderizarGraficoStatus(dataResumo.resumo.demandas);
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar gráficos:', error);
+            }
+        }
+
+function renderizarGraficoDemandas(dados) {
+    const ctx = document.getElementById('chart-demandas-dia');
+    if (!ctx) return;
+    
+    // IMPORTANTE: Destroi o gráfico anterior
+    if (window.chartDemandas) {
+        window.chartDemandas.destroy();
+    }
+    
+    const labels = dados.map(d => {
+        const date = new Date(d.data || d.dia_semana);
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    });
+    
+    const valores = dados.map(d => d.total || 0);
+    
+    window.chartDemandas = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Demandas',
+                data: valores,
+                borderColor: '#ec4899',
+                backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,  // MUDEI DE false PARA true
+            aspectRatio: 2,              // ADICIONA PROPORÇÃO FIXA
+            plugins: { 
+                legend: { display: false } 
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+function renderizarGraficoStatus(dados) {
+    const ctx = document.getElementById('chart-status');
+    if (!ctx) return;
+    
+    // IMPORTANTE: Destroi o gráfico anterior
+    if (window.chartStatus) {
+        window.chartStatus.destroy();
+    }
+    
+    window.chartStatus = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pendentes', 'Em Andamento', 'Resolvidos'],
+            datasets: [{
+                data: [
+                    dados.pendentes || 0,
+                    dados.em_andamento || 0,
+                    dados.resolvidos || 0
+                ],
+                backgroundColor: ['#fbbf24', '#3b82f6', '#10b981']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,  // MUDEI DE false PARA true
+            aspectRatio: 1,              // ADICIONA PROPORÇÃO FIXA (quadrado)
+            plugins: { 
+                legend: { position: 'bottom' } 
+            }
+        }
+    });
+}
+
+        // ============================================
+        // DEMANDAS
+        // ============================================
+        
+        async function carregarDemandas() {
+            try {
+                const tabela = document.getElementById('tabela-demandas');
+                tabela.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                            <p>Carregando demandas...</p>
+                        </td>
+                    </tr>
+                `;
+                
+                const response = await fetch(API_BASE + 'demandas_admin_api.php?action=listar&limite=50');
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    AppState.demandas = data.demandas;
+                    renderizarTabelaDemandas(data.demandas);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar demandas:', error);
+            }
+        }
+
+        async function filtrarDemandas() {
+            const status = document.getElementById('filtro-status').value;
+            const lida = document.getElementById('filtro-lida').value;
+            const busca = document.getElementById('filtro-busca').value;
+            
+            let url = API_BASE + 'demandas_admin_api.php?action=listar&limite=50';
+            
+            if (status) url += `&status=${status}`;
+            if (lida) url += `&lida=${lida}`;
+            if (busca) url += `&busca=${encodeURIComponent(busca)}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    renderizarTabelaDemandas(data.demandas);
+                }
+            } catch (error) {
+                console.error('Erro ao filtrar demandas:', error);
+            }
+        }
+
+        function renderizarTabelaDemandas(demandas) {
+            const tabela = document.getElementById('tabela-demandas');
+            
+            if (demandas.length === 0) {
+                tabela.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-2"></i>
+                            <p>Nenhuma demanda encontrada</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tabela.innerHTML = demandas.map(demanda => `
+                <tr class="${demanda.lida == 0 ? 'bg-blue-50' : ''} hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <span class="status-badge status-${demanda.status}">${traduzirStatus(demanda.status)}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            ${demanda.lida == 0 ? '<span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>' : ''}
+                            <span class="font-medium text-gray-900">${escapeHtml(demanda.faixa_idade || 'Anônimo')}</span>
+                        </div>
+                        <div class="text-sm text-gray-500">${escapeHtml(demanda.municipio_form || 'Não informado')}</div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-900">${escapeHtml((demanda.descricao || '').substring(0, 50))}...</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${formatarData(demanda.data_envio)}
+                    </td>
+                    <td class="px-6 py-4">
+                        <button onclick="visualizarDemanda(${demanda.id})" class="px-3 py-1 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors text-sm">
+                            <i class="fas fa-eye mr-1"></i>Ver
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function visualizarDemanda(id) {
+            try {
+                const response = await fetch(API_BASE + `demandas_admin_api.php?action=buscar&id=${id}`);
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    mostrarModalDemanda(data.demanda);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar demanda:', error);
+            }
+        }
+
+        function mostrarModalDemanda(demanda) {
+            const modal = document.getElementById('modal-demanda');
+            const conteudo = document.getElementById('modal-demanda-conteudo');
+            
+            conteudo.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex items-center space-x-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select id="demanda-status-${demanda.id}" class="px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="pendente" ${demanda.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+                                <option value="em_andamento" ${demanda.status === 'em_andamento' ? 'selected' : ''}>Em Andamento</option>
+                                <option value="resolvido" ${demanda.status === 'resolvido' ? 'selected' : ''}>Resolvido</option>
+                                <option value="cancelado" ${demanda.status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
+                            </select>
+                        </div>
+                        <button onclick="atualizarStatusDemanda(${demanda.id})" class="mt-6 px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700">
+                            Atualizar Status
+                        </button>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-bold text-gray-900 mb-3">Informações</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">Faixa de Idade</p>
+                                <p class="font-medium text-gray-900">${escapeHtml(demanda.faixa_idade || 'Não informado')}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Município/CEP</p>
+                                <p class="font-medium text-gray-900">${escapeHtml(demanda.municipio_form || 'Não informado')}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Moradia</p>
+                                <p class="font-medium text-gray-900">${escapeHtml(demanda.moradia || 'Não informado')}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Data de Envio</p>
+                                <p class="font-medium text-gray-900">${formatarData(demanda.data_envio)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-2">Tipos de Violência</h4>
+                        <p class="text-gray-700">${escapeHtml(demanda.violencia || 'Não especificado')}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-2">Descrição</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-gray-700 whitespace-pre-wrap">${escapeHtml(demanda.descricao || 'Nenhuma descrição')}</p>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-2">Nível de Urgência</h4>
+                        <p class="text-gray-700">
+                            <strong>Perigo agora:</strong> ${escapeHtml(demanda.perigo_agora || 'Não informado')}<br>
+                            <strong>Nível:</strong> ${escapeHtml(demanda.nivel_urgencia || 'Não informado')}<br>
+                            <strong>Crianças/Idosas:</strong> ${escapeHtml(demanda.criancas_idosas || 'Não informado')}
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-gray-900 mb-2">Notas Internas</h4>
+                        <div class="bg-yellow-50 p-4 rounded-lg mb-3 max-h-40 overflow-y-auto">
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap">${demanda.notas_internas || 'Nenhuma nota adicionada'}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <input 
+                                type="text" 
+                                id="nova-nota-${demanda.id}" 
+                                placeholder="Adicionar nova nota..." 
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg">
+                            <button onclick="adicionarNota(${demanda.id})" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3 pt-4 border-t border-gray-200">
+                        <button onclick="deletarDemanda(${demanda.id})" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                            <i class="fas fa-trash mr-2"></i>Deletar
+                        </button>
+                        <button onclick="fecharModal('modal-demanda')" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        async function atualizarStatusDemanda(id) {
+            const novoStatus = document.getElementById(`demanda-status-${id}`).value;
+            
+            try {
+                const response = await fetch(API_BASE + 'demandas_admin_api.php?action=atualizar_status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, status: novoStatus })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert('Status atualizado com sucesso!');
+                    carregarDemandas();
+                    fecharModal('modal-demanda');
+                } else {
+                    alert(data.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar status:', error);
+                alert('Erro ao atualizar status');
+            }
+        }
+
+        async function adicionarNota(id) {
+            const inputNota = document.getElementById(`nova-nota-${id}`);
+            const nota = inputNota.value.trim();
+            
+            if (!nota) {
+                alert('Digite uma nota primeiro');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + 'demandas_admin_api.php?action=adicionar_nota', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, nota })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert('Nota adicionada!');
+                    inputNota.value = '';
+                    visualizarDemanda(id);
+                } else {
+                    alert(data.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar nota:', error);
+                alert('Erro ao adicionar nota');
+            }
+        }
+
+        async function deletarDemanda(id) {
+            if (!confirm('Tem certeza que deseja deletar esta demanda?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + 'demandas_admin_api.php?action=deletar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert('Demanda deletada com sucesso!');
+                    carregarDemandas();
+                    fecharModal('modal-demanda');
+                } else {
+                    alert(data.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao deletar demanda:', error);
+                alert('Erro ao deletar demanda');
+            }
+        }
+
+        // ============================================
+        // ALERTAS DE PÂNICO
+        // ============================================
+        
+        async function carregarAlertas() {
+            try {
+                const response = await fetch('./api/alertas.php');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    AppState.alertas = data.data;
+                    renderizarAlertas(data.data);
+                    
+                    // Atualiza badge
+                    const badge = document.getElementById('badge-alertas');
+                    if (data.data.length > 0) {
+                        badge.textContent = data.data.length;
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar alertas:', error);
+            }
+        }
+
+        function renderizarAlertas(alertas) {
+            const container = document.getElementById('container-alertas-ativos');
+            const semAlertas = document.getElementById('sem-alertas');
+            
+            if (alertas.length === 0) {
+                container.innerHTML = '';
+                semAlertas.classList.remove('hidden');
+                return;
+            }
+            
+            semAlertas.classList.add('hidden');
+            
+            container.innerHTML = alertas.map(alerta => `
+                <div class="alert-panic bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-600">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center animate-pulse">
+                                <i class="fas fa-exclamation-triangle text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-red-900">Alerta de Pânico Ativo</h3>
+                                <p class="text-sm text-red-700">ID: ${alerta.id} | Hash: ${alerta.usuario_hash.substring(0, 8)}...</p>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full animate-pulse">
+                            ATIVO
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Localização</p>
+                            <p class="font-semibold text-gray-900">${alerta.ultima_latitude}, ${alerta.ultima_longitude}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Última Atualização</p>
+                            <p class="font-semibold text-gray-900">${formatarData(alerta.ultima_atualizacao)}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total de Atualizações</p>
+                            <p class="font-semibold text-gray-900">${alerta.total_atualizacoes}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Data de Criação</p>
+                            <p class="font-semibold text-gray-900">${formatarData(alerta.created_at)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <a href="https://www.google.com/maps?q=${alerta.ultima_latitude},${alerta.ultima_longitude}" target="_blank" class="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition text-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>Ver no Mapa
+                        </a>
+                        <button onclick="cancelarAlerta(${alerta.id})" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function iniciarMonitoramentoAlertas() {
+            // Para qualquer monitoramento anterior
+            if (AppState.intervaloAlertas) {
+                clearInterval(AppState.intervaloAlertas);
+            }
+            
+            // Atualiza a cada 10 segundos
+            AppState.intervaloAlertas = setInterval(() => {
+                if (AppState.secaoAtual === 'alertas') {
+                    carregarAlertas();
+                }
+            }, 10000);
+        }
+
+        async function cancelarAlerta(id) {
+            if (!confirm('Deseja realmente cancelar este alerta?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('./api/alertas.php?acao=cancelar', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ alerta_id: id })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert('Alerta cancelado com sucesso!');
+                    carregarAlertas();
+                } else {
+                    alert(data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao cancelar alerta:', error);
+                alert('Erro ao cancelar alerta');
+            }
+        }
+
+        // ============================================
+        // SERVIÇOS
+        // ============================================
+        
+        async function carregarServicos() {
+            try {
+                const container = document.getElementById('lista-servicos');
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Carregando serviços...</p>
+                    </div>
+                `;
+                
+                const response = await fetch(API_BASE + 'servicos_api.php?action=listar');
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    AppState.servicos = data.servicos;
+                    renderizarServicos(data.servicos);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar serviços:', error);
+            }
+        }
+
+        function renderizarServicos(servicos) {
+            const container = document.getElementById('lista-servicos');
+            
+            if (servicos.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <i class="fas fa-inbox text-3xl mb-2"></i>
+                        <p>Nenhum serviço cadastrado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = servicos.map(servico => `
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-12 w-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg flex items-center justify-center text-white">
+                                <i class="${servico.icone || 'fas fa-circle'}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900">${escapeHtml(servico.titulo)}</h3>
+                                <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">${servico.categoria}</span>
+                            </div>
+                        </div>
+                        <span class="${servico.ativo == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} text-xs px-2 py-1 rounded-full">
+                            ${servico.ativo == 1 ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600 mb-4">${escapeHtml(servico.descricao)}</p>
+                    
+                    <div class="space-y-2 text-sm text-gray-500">
+                        ${servico.telefone ? `<p><i class="fas fa-phone w-4"></i> ${escapeHtml(servico.telefone)}</p>` : ''}
+                        ${servico.email ? `<p><i class="fas fa-envelope w-4"></i> ${escapeHtml(servico.email)}</p>` : ''}
+                        ${servico.horario ? `<p><i class="fas fa-clock w-4"></i> ${escapeHtml(servico.horario)}</p>` : ''}
+                    </div>
+                    
+                    <div class="flex space-x-2 mt-4 pt-4 border-t border-gray-200">
+                        <button onclick="editarServico(${servico.id})" class="flex-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+                            <i class="fas fa-edit mr-1"></i>Editar
+                        </button>
+                        <button onclick="deletarServico(${servico.id})" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function abrirModalServico(servico = null) {
+            const modal = document.getElementById('modal-servico');
+            const titulo = document.getElementById('modal-servico-titulo');
+            const form = document.getElementById('form-servico');
+            
+            form.reset();
+            
+            if (servico) {
+                titulo.textContent = 'Editar Serviço';
+                document.getElementById('servico-id').value = servico.id;
+                document.getElementById('servico-titulo').value = servico.titulo;
+                document.getElementById('servico-descricao').value = servico.descricao;
+                document.getElementById('servico-icone').value = servico.icone || '';
+                document.getElementById('servico-categoria').value = servico.categoria;
+                document.getElementById('servico-telefone').value = servico.telefone || '';
+                document.getElementById('servico-email').value = servico.email || '';
+                document.getElementById('servico-horario').value = servico.horario || '';
+                document.getElementById('servico-endereco').value = servico.endereco || '';
+                document.getElementById('servico-link').value = servico.link || '';
+                document.getElementById('servico-ativo').checked = servico.ativo == 1;
+            } else {
+                titulo.textContent = 'Novo Serviço';
+                document.getElementById('servico-id').value = '';
+                document.getElementById('servico-ativo').checked = true;
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        async function editarServico(id) {
+            try {
+                const response = await fetch(API_BASE + `servicos_api.php?action=buscar&id=${id}`);
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    abrirModalServico(data.servico);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar serviço:', error);
+            }
+        }
+
+        async function salvarServico(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('servico-id').value;
+            const dados = {
+                titulo: document.getElementById('servico-titulo').value,
+                descricao: document.getElementById('servico-descricao').value,
+                icone: document.getElementById('servico-icone').value,
+                categoria: document.getElementById('servico-categoria').value,
+                telefone: document.getElementById('servico-telefone').value,
+                email: document.getElementById('servico-email').value,
+                horario: document.getElementById('servico-horario').value,
+                endereco: document.getElementById('servico-endereco').value,
+                link: document.getElementById('servico-link').value,
+                ativo: document.getElementById('servico-ativo').checked ? 1 : 0
+            };
+            
+            const action = id ? 'atualizar' : 'criar';
+            if (id) dados.id = parseInt(id);
+            
+            try {
+                const response = await fetch(API_BASE + `servicos_api.php?action=${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert(id ? 'Serviço atualizado!' : 'Serviço criado!');
+                    carregarServicos();
+                    fecharModal('modal-servico');
+                } else {
+                    alert(data.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao salvar serviço:', error);
+                alert('Erro ao salvar serviço');
+            }
+        }
+
+        async function deletarServico(id) {
+            if (!confirm('Tem certeza que deseja deletar este serviço?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_BASE + 'servicos_api.php?action=deletar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert('Serviço deletado!');
+                    carregarServicos();
+                } else {
+                    alert(data.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao deletar serviço:', error);
+                alert('Erro ao deletar serviço');
+            }
+        }
+
+        // ============================================
+        // BANNERS
+        // ============================================
+        
+        async function fazerUploadBanner(numero, arquivo) {
+            if (!arquivo) return;
+            
+            // Valida tamanho (5MB)
+            if (arquivo.size > 5 * 1024 * 1024) {
+                alert('Arquivo muito grande! O tamanho máximo é 5MB.');
+                return;
+            }
+            
+            // Valida tipo
+            const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!tiposPermitidos.includes(arquivo.type)) {
+                alert('Tipo de arquivo não permitido! Use JPG, PNG ou WebP.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('imagem', arquivo);
+            formData.append('tipo', 'banner');
+            formData.append('numero', numero);
+            
+            try {
+                alert('Fazendo upload... Aguarde.');
+                
+                const response = await fetch(API_BASE + 'upload_imagem_api.php?action=upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    alert('Banner atualizado com sucesso!');
+                    
+                    // Atualiza preview
+                    const preview = document.getElementById(`preview-banner${numero}`);
+                    preview.src = data.arquivo.url + '?t=' + new Date().getTime();
+                    
+                    // Atualiza data
+                    document.getElementById(`data-banner${numero}`).textContent = new Date().toLocaleString('pt-BR');
+                } else {
+                    alert(data.mensagem);
+                }
+            } catch (error) {
+                console.error('Erro ao fazer upload:', error);
+                alert('Erro ao fazer upload do banner');
+            }
+        }
+
+        // ============================================
+        // FUNÇÕES AUXILIARES
+        // ============================================
+        
+        function fecharModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function traduzirStatus(status) {
+            const traducoes = {
+                'pendente': 'Pendente',
+                'em_andamento': 'Em Andamento',
+                'resolvido': 'Resolvido',
+                'cancelado': 'Cancelado'
+            };
+            return traducoes[status] || status;
+        }
+
+        function formatarData(dataStr) {
+            const data = new Date(dataStr);
+            return data.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Exporta funções globais
+        window.visualizarDemanda = visualizarDemanda;
+        window.atualizarStatusDemanda = atualizarStatusDemanda;
+        window.adicionarNota = adicionarNota;
+        window.deletarDemanda = deletarDemanda;
+        window.filtrarDemandas = filtrarDemandas;
+        window.editarServico = editarServico;
+        window.deletarServico = deletarServico;
+        window.abrirModalServico = abrirModalServico;
+        window.salvarServico = salvarServico;
+        window.cancelarAlerta = cancelarAlerta;
+        window.fecharModal = fecharModal;
+        window.fazerLogout = fazerLogout;
+        window.navegarParaSecao = navegarParaSecao;
+    </script>
+</body>
+</html>

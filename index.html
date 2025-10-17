@@ -1458,83 +1458,67 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-                <!-- Sobre -->
-                <div>
-                    <h3 class="text-lg font-bold mb-3">Juntas Goiás</h3>
-                    <p class="text-gray-400 text-sm">Plataforma completa de apoio a mulheres em situação de violência em Goiás.</p>
-                    <!-- Logomarca PRE (PNG preferencial no root do projeto, SVG fallback se necessário) -->
-                    <img src="logopre.png" alt="PRE - Governo de Goiás" class="mx-auto sm:mx-0 h-12 sm:h-16 mt-4" onerror="this.onerror=null; this.src='assets/images/logopre.svg'">
-                </div>
-                
-                <!-- Emergência -->
-                <div>
-                    <h3 class="text-lg font-bold mb-3">Emergência</h3>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="tel:190" class="text-gray-400 hover:text-white transition-colors">190 - Polícia Militar</a></li>
-                        <li><a href="tel:180" class="text-gray-400 hover:text-white transition-colors">180 - Central da Mulher</a></li>
-                        <li><a href="tel:192" class="text-gray-400 hover:text-white transition-colors">192 - SAMU</a></li>
-                        <li><a href="tel:100" class="text-gray-400 hover:text-white transition-colors">100 - Direitos Humanos</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Navegação -->
-                <div>
-                    <h3 class="text-lg font-bold mb-3">Navegação</h3>
-                    <ul class="space-y-2 text-sm">
-                        <li><button onclick="scrollToSection('servicos')" class="text-gray-400 hover:text-white transition-colors">Serviços</button></li>
-                        <li><button onclick="scrollToSection('formulario')" class="text-gray-400 hover:text-white transition-colors">Relatar Situação</button></li>
-                    </ul>
-                </div>
-                
-                <!-- Segurança -->
-                <div>
-                    <h3 class="text-lg font-bold mb-3">Segurança</h3>
-                    <p class="text-gray-400 text-sm mb-3">Use sempre navegação anônima. Limpe seu histórico após acessar este site.</p>
-                    <button onclick="quickExit()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">Sair Rápido</button>
-                </div>
+<footer class="bg-gray-900 text-white py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+            <!-- Sobre -->
+            <div>
+                <h3 class="text-lg font-bold mb-3">Juntas Goiás</h3>
+                <p class="text-gray-400 text-sm">Plataforma completa de apoio a mulheres em situação de violência em Goiás.</p>
+                <!-- Logomarca PRE (PNG preferencial no root do projeto, SVG fallback se necessário) -->
+                <img src="logopre.png" alt="PRE - Governo de Goiás" class="mx-auto sm:mx-0 h-12 sm:h-16 mt-4" onerror="this.onerror=null; this.src='assets/images/logopre.svg'">
             </div>
             
-            <!-- Copyright -->
-            <div class="border-t border-gray-800 pt-6 text-center text-sm text-gray-400">
+            <!-- Emergência -->
+            <div>
+                <h3 class="text-lg font-bold mb-3">Emergência</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="tel:190" class="text-gray-400 hover:text-white transition-colors">190 - Polícia Militar</a></li>
+                    <li><a href="tel:180" class="text-gray-400 hover:text-white transition-colors">180 - Central da Mulher</a></li>
+                    <li><a href="tel:192" class="text-gray-400 hover:text-white transition-colors">192 - SAMU</a></li>
+                    <li><a href="tel:100" class="text-gray-400 hover:text-white transition-colors">100 - Direitos Humanos</a></li>
+                </ul>
+            </div>
+            
+            <!-- Navegação -->
+            <div>
+                <h3 class="text-lg font-bold mb-3">Navegação</h3>
+                <ul class="space-y-2 text-sm">
+                    <li><button onclick="scrollToSection('servicos')" class="text-gray-400 hover:text-white transition-colors">Serviços</button></li>
+                    <li><button onclick="scrollToSection('formulario')" class="text-gray-400 hover:text-white transition-colors">Relatar Situação</button></li>
+                </ul>
+            </div>
+            
+            <!-- Segurança -->
+            <div>
+                <h3 class="text-lg font-bold mb-3">Segurança</h3>
+                <p class="text-gray-400 text-sm mb-3">Use sempre navegação anônima. Limpe seu histórico após acessar este site.</p>
+                <button onclick="quickExit()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">Sair Rápido</button>
+            </div>
+        </div>
+        
+        <!-- Link Discreto para Painel Admin (ACIMA da linha de copyright) -->
+        <div class="text-center mb-4 opacity-30 hover:opacity-100 transition-opacity duration-300">
+            <a href="gestao.html" 
+               class="inline-flex items-center gap-1 text-gray-500 hover:text-gray-300 transition-colors text-xs"
+               title="Área Administrativa - Acesso Restrito">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Admin</span>
+            </a>
+        </div>
+        
+        <!-- Copyright (ABAIXO do link admin) -->
+        <div class="border-t border-gray-800 pt-6">
+            <div class="text-center text-sm text-gray-400">
                 <p>&copy; 2025 Juntas Goiás. Projeto de apoio e acolhimento a mulheres.</p>
                 <p class="mt-2">Você tem direitos. Você não está sozinha.</p>
             </div>
         </div>
-	 <i class="fas fa-heart"></i>
-    </footer>
-    <!-- Link Discreto para Painel Admin -->
-    <div class="text-center mt-8 pt-6 border-t border-gray-700">
-        <a href="frontend/admin.html" 
-           class="inline-flex items-center text-gray-400 hover:text-gray-300 transition-colors text-xs"
-           title="Área Administrativa">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-    </a>
-</div>
-	 <i class="fas fa-heart"></i>
-    </footer>
-</body>
-</html>
-	 <i class="fas fa-heart"></i>
-    </footer>
-    <!-- Link Discreto para Painel Admin -->
-    <div class="text-center mt-8 pt-6 border-t border-gray-700">
-        <a href="frontend/admin.html" 
-           class="inline-flex items-center text-gray-400 hover:text-gray-300 transition-colors text-xs"
-           title="Área Administrativa">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-    </a>
-</div>
-</body>
-</html>
+    </div>
+</footer>
 
     <!-- Leaflet JS para o mapa -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
