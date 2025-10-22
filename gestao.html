@@ -20,13 +20,118 @@
     <style>
         /* Estilos personalizados */
         * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-        
+
+        /* Dark mode variables */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --sidebar-bg: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --bg-tertiary: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #4b5563;
+            --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+        }
+
         /* Animação de loading */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
         .loading { animation: spin 1s linear infinite; }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid;
+        }
+
+        .toast.success { border-color: #10b981; }
+        .toast.error { border-color: #ef4444; }
+        .toast.warning { border-color: #f59e0b; }
+        .toast.info { border-color: #3b82f6; }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.removing {
+            animation: slideOut 0.3s ease-out;
+        }
+
+        /* Skeleton Loader */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin: 8px 0;
+        }
+
+        .skeleton-title {
+            height: 24px;
+            width: 60%;
+            margin: 8px 0;
+        }
+
+        .skeleton-card {
+            height: 120px;
+            border-radius: 12px;
+        }
         
         /* Sidebar fixa */
         .sidebar {
@@ -117,9 +222,113 @@
         .status-em_andamento { background: #dbeafe; color: #1e40af; }
         .status-resolvido { background: #d1fae5; color: #065f46; }
         .status-cancelado { background: #fee2e2; color: #991b1b; }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: #f3f4f6;
+            border-color: #db2777;
+        }
+
+        .pagination button.active {
+            background: linear-gradient(90deg, #db2777 0%, #9333ea 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Smooth transitions */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Better scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #db2777;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #be185d;
+        }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        /* Dark mode toggle switch */
+        .theme-toggle {
+            width: 60px;
+            height: 30px;
+            background: #e5e7eb;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .theme-toggle.active {
+            background: #db2777;
+        }
+
+        .theme-toggle-slider {
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle.active .theme-toggle-slider {
+            transform: translateX(30px);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
 
     <!-- ========================================= -->
     <!-- TELA DE LOGIN -->
@@ -278,8 +487,16 @@
                             <i class="fas fa-clock"></i>
                             <span id="current-time" class="text-sm font-mono">00:00:00</span>
                         </div>
+
+                        <!-- Dark Mode Toggle -->
+                        <div class="theme-toggle" id="theme-toggle" title="Alternar modo escuro">
+                            <div class="theme-toggle-slider">
+                                <i class="fas fa-moon text-xs text-gray-600" id="theme-icon"></i>
+                            </div>
+                        </div>
+
                         <!-- Botão de atualizar -->
-                        <button id="btn-refresh" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700" title="Atualizar dados">
+                        <button id="btn-refresh" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700 smooth-transition" title="Atualizar dados">
                             <i class="fas fa-sync-alt"></i>
                         </button>
                     </div>
@@ -381,13 +598,20 @@
                 <!-- SEÇÃO: DEMANDAS -->
                 <!-- ========================================= -->
                 <section id="section-demandas" class="content-section hidden">
-                    <!-- Filtros -->
+                    <!-- Filtros e Ações -->
                     <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4">Filtros</h3>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-gray-900">Filtros</h3>
+                            <div class="flex gap-2">
+                                <button onclick="exportarDemandasCSV()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition smooth-transition" title="Exportar para CSV">
+                                    <i class="fas fa-file-excel mr-2"></i>Exportar CSV
+                                </button>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                                <select id="filtro-status" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                                <select id="filtro-status" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500 smooth-transition">
                                     <option value="">Todos</option>
                                     <option value="pendente">Pendente</option>
                                     <option value="em_andamento">Em Andamento</option>
@@ -397,7 +621,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Lida</label>
-                                <select id="filtro-lida" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                                <select id="filtro-lida" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500 smooth-transition">
                                     <option value="">Todas</option>
                                     <option value="0">Não lida</option>
                                     <option value="1">Lida</option>
@@ -405,10 +629,10 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
-                                <input type="text" id="filtro-busca" placeholder="Nome, email..." class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500">
+                                <input type="text" id="filtro-busca" placeholder="Nome, email, descrição..." class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-pink-500 smooth-transition">
                             </div>
                             <div class="flex items-end">
-                                <button onclick="filtrarDemandas()" class="w-full px-6 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition">
+                                <button onclick="filtrarDemandas()" class="w-full px-6 py-2 bg-pink-600 text-white font-semibold rounded-lg hover:bg-pink-700 transition smooth-transition">
                                     <i class="fas fa-search mr-2"></i>Filtrar
                                 </button>
                             </div>
@@ -432,6 +656,11 @@
                                     <!-- Será preenchido via JavaScript -->
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Paginação -->
+                        <div id="pagination-demandas" class="pagination p-4 border-t border-gray-200">
+                            <!-- Será preenchido via JavaScript -->
                         </div>
                     </div>
                 </section>
@@ -693,8 +922,100 @@
             demandas: [],
             servicos: [],
             alertas: [],
-            intervaloAlertas: null // Para atualização automática
+            intervaloAlertas: null, // Para atualização automática
+            paginaAtual: 1,
+            itensPorPagina: 10,
+            totalItens: 0,
+            darkMode: false
         };
+
+        // ============================================
+        // SISTEMA DE TOAST
+        // ============================================
+
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            const colors = {
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600',
+                info: 'text-blue-600'
+            };
+
+            toast.innerHTML = `
+                <i class="fas ${icons[type]} ${colors[type]} text-xl"></i>
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-900">${message}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ============================================
+        // DARK MODE
+        // ============================================
+
+        function toggleDarkMode() {
+            AppState.darkMode = !AppState.darkMode;
+            const toggle = document.getElementById('theme-toggle');
+            const icon = document.getElementById('theme-icon');
+
+            if (AppState.darkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                toggle.classList.add('active');
+                icon.className = 'fas fa-sun text-xs text-yellow-400';
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                toggle.classList.remove('active');
+                icon.className = 'fas fa-moon text-xs text-gray-600';
+                localStorage.setItem('darkMode', 'false');
+            }
+        }
+
+        function loadDarkModePreference() {
+            const savedMode = localStorage.getItem('darkMode');
+            if (savedMode === 'true') {
+                AppState.darkMode = true;
+                toggleDarkMode();
+            }
+        }
+
+        // ============================================
+        // DEBOUNCE UTILITY
+        // ============================================
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
 
         // ============================================
         // INICIALIZAÇÃO
@@ -702,7 +1023,8 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Painel Administrativo - Inicializando...');
-            
+
+            loadDarkModePreference();
             verificarSessao();
             configurarEventListeners();
             atualizarRelogio();
@@ -885,17 +1207,36 @@
                     navegarParaSecao(secao);
                 });
             });
-            
+
+            // Dark Mode Toggle
+            document.getElementById('theme-toggle')?.addEventListener('click', toggleDarkMode);
+
             // Botão de refresh
             document.getElementById('btn-refresh')?.addEventListener('click', function() {
+                const btn = this;
+                btn.querySelector('i').classList.add('loading');
                 carregarDadosSecao(AppState.secaoAtual);
+                setTimeout(() => {
+                    btn.querySelector('i').classList.remove('loading');
+                    showToast('Dados atualizados', 'success', 2000);
+                }, 500);
             });
-            
+
             // Toggle sidebar mobile
             document.getElementById('btn-toggle-sidebar')?.addEventListener('click', function() {
                 document.getElementById('sidebar').classList.toggle('sidebar-mobile-hidden');
             });
-            
+
+            // Busca com debounce
+            const buscaInput = document.getElementById('filtro-busca');
+            if (buscaInput) {
+                buscaInput.addEventListener('input', debounce(function() {
+                    if (this.value.length >= 3 || this.value.length === 0) {
+                        filtrarDemandas();
+                    }
+                }, 500));
+            }
+
             // Upload de banners
             document.getElementById('upload-banner1')?.addEventListener('change', function() {
                 fazerUploadBanner(1, this.files[0]);
@@ -906,7 +1247,7 @@
             document.getElementById('upload-banner3')?.addEventListener('change', function() {
                 fazerUploadBanner(3, this.files[0]);
             });
-            
+
             // Form de serviço
             document.getElementById('form-servico')?.addEventListener('submit', salvarServico);
         }
@@ -1128,57 +1469,142 @@ function renderizarGraficoStatus(dados) {
         // ============================================
         // DEMANDAS
         // ============================================
-        
+
         async function carregarDemandas() {
             try {
-                const tabela = document.getElementById('tabela-demandas');
-                tabela.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
-                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                            <p>Carregando demandas...</p>
-                        </td>
-                    </tr>
-                `;
-                
-                const response = await fetch(API_BASE + 'demandas_admin_api.php?action=listar&limite=50');
+                mostrarSkeletonDemandas();
+
+                const response = await fetch(API_BASE + 'demandas_admin_api.php?action=listar&limite=500');
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
                     AppState.demandas = data.demandas;
+                    AppState.totalItens = data.demandas.length;
+                    AppState.paginaAtual = 1;
                     renderizarTabelaDemandas(data.demandas);
+                    renderizarPaginacao();
+                } else {
+                    showToast('Erro ao carregar demandas', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao carregar demandas:', error);
+                showToast('Erro de conexão ao carregar demandas', 'error');
             }
+        }
+
+        function mostrarSkeletonDemandas() {
+            const tabela = document.getElementById('tabela-demandas');
+            const skeletons = Array(5).fill(0).map(() => `
+                <tr>
+                    <td class="px-6 py-4"><div class="skeleton skeleton-text w-20"></div></td>
+                    <td class="px-6 py-4"><div class="skeleton skeleton-text w-32"></div></td>
+                    <td class="px-6 py-4"><div class="skeleton skeleton-text w-48"></div></td>
+                    <td class="px-6 py-4"><div class="skeleton skeleton-text w-24"></div></td>
+                    <td class="px-6 py-4"><div class="skeleton skeleton-text w-16"></div></td>
+                </tr>
+            `).join('');
+            tabela.innerHTML = skeletons;
+        }
+
+        function renderizarPaginacao() {
+            const totalPaginas = Math.ceil(AppState.totalItens / AppState.itensPorPagina);
+            const container = document.getElementById('pagination-demandas');
+
+            if (totalPaginas <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <button onclick="mudarPagina(${AppState.paginaAtual - 1})" ${AppState.paginaAtual === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+
+            // Mostra no máximo 7 páginas
+            let startPage = Math.max(1, AppState.paginaAtual - 3);
+            let endPage = Math.min(totalPaginas, startPage + 6);
+
+            if (endPage - startPage < 6) {
+                startPage = Math.max(1, endPage - 6);
+            }
+
+            if (startPage > 1) {
+                html += `<button onclick="mudarPagina(1)">1</button>`;
+                if (startPage > 2) {
+                    html += `<span class="px-2">...</span>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button onclick="mudarPagina(${i})" class="${i === AppState.paginaAtual ? 'active' : ''}">${i}</button>`;
+            }
+
+            if (endPage < totalPaginas) {
+                if (endPage < totalPaginas - 1) {
+                    html += `<span class="px-2">...</span>`;
+                }
+                html += `<button onclick="mudarPagina(${totalPaginas})">${totalPaginas}</button>`;
+            }
+
+            html += `
+                <button onclick="mudarPagina(${AppState.paginaAtual + 1})" ${AppState.paginaAtual === totalPaginas ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+
+            html += `<span class="text-sm text-gray-600 ml-4">Página ${AppState.paginaAtual} de ${totalPaginas}</span>`;
+
+            container.innerHTML = html;
+        }
+
+        function mudarPagina(novaPagina) {
+            const totalPaginas = Math.ceil(AppState.totalItens / AppState.itensPorPagina);
+            if (novaPagina < 1 || novaPagina > totalPaginas) return;
+
+            AppState.paginaAtual = novaPagina;
+            renderizarTabelaDemandas(AppState.demandas);
+            renderizarPaginacao();
+
+            // Scroll suave para o topo da tabela
+            document.querySelector('#section-demandas').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         async function filtrarDemandas() {
             const status = document.getElementById('filtro-status').value;
             const lida = document.getElementById('filtro-lida').value;
             const busca = document.getElementById('filtro-busca').value;
-            
-            let url = API_BASE + 'demandas_admin_api.php?action=listar&limite=50';
-            
+
+            let url = API_BASE + 'demandas_admin_api.php?action=listar&limite=500';
+
             if (status) url += `&status=${status}`;
             if (lida) url += `&lida=${lida}`;
             if (busca) url += `&busca=${encodeURIComponent(busca)}`;
-            
+
             try {
+                mostrarSkeletonDemandas();
+
                 const response = await fetch(url);
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
+                    AppState.demandas = data.demandas;
+                    AppState.totalItens = data.demandas.length;
+                    AppState.paginaAtual = 1; // Reset para primeira página
                     renderizarTabelaDemandas(data.demandas);
+                    renderizarPaginacao();
+                } else {
+                    showToast('Erro ao filtrar demandas', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao filtrar demandas:', error);
+                showToast('Erro de conexão ao filtrar demandas', 'error');
             }
         }
 
         function renderizarTabelaDemandas(demandas) {
             const tabela = document.getElementById('tabela-demandas');
-            
+
             if (demandas.length === 0) {
                 tabela.innerHTML = `
                     <tr>
@@ -1188,17 +1614,23 @@ function renderizarGraficoStatus(dados) {
                         </td>
                     </tr>
                 `;
+                document.getElementById('pagination-demandas').innerHTML = '';
                 return;
             }
-            
-            tabela.innerHTML = demandas.map(demanda => `
-                <tr class="${demanda.lida == 0 ? 'bg-blue-50' : ''} hover:bg-gray-50 transition-colors">
+
+            // Calcula itens da página atual
+            const inicio = (AppState.paginaAtual - 1) * AppState.itensPorPagina;
+            const fim = inicio + AppState.itensPorPagina;
+            const demandasPagina = demandas.slice(inicio, fim);
+
+            tabela.innerHTML = demandasPagina.map(demanda => `
+                <tr class="${demanda.lida == 0 ? 'bg-blue-50' : ''} hover:bg-gray-50 transition-colors fade-in">
                     <td class="px-6 py-4">
                         <span class="status-badge status-${demanda.status}">${traduzirStatus(demanda.status)}</span>
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center">
-                            ${demanda.lida == 0 ? '<span class="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>' : ''}
+                            ${demanda.lida == 0 ? '<span class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>' : ''}
                             <span class="font-medium text-gray-900">${escapeHtml(demanda.faixa_idade || 'Anônimo')}</span>
                         </div>
                         <div class="text-sm text-gray-500">${escapeHtml(demanda.municipio_form || 'Não informado')}</div>
@@ -1208,12 +1640,56 @@ function renderizarGraficoStatus(dados) {
                         ${formatarData(demanda.data_envio)}
                     </td>
                     <td class="px-6 py-4">
-                        <button onclick="visualizarDemanda(${demanda.id})" class="px-3 py-1 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors text-sm">
+                        <button onclick="visualizarDemanda(${demanda.id})" class="px-3 py-1 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors text-sm smooth-transition">
                             <i class="fas fa-eye mr-1"></i>Ver
                         </button>
                     </td>
                 </tr>
             `).join('');
+        }
+
+        // Exportar demandas para CSV
+        function exportarDemandasCSV() {
+            if (AppState.demandas.length === 0) {
+                showToast('Não há demandas para exportar', 'warning');
+                return;
+            }
+
+            // Cabeçalhos do CSV
+            const headers = ['ID', 'Status', 'Faixa Idade', 'Município', 'Moradia', 'Violência', 'Descrição', 'Perigo Agora', 'Nível Urgência', 'Data Envio', 'Lida'];
+
+            // Converte demandas para CSV
+            const csvContent = [
+                headers.join(','),
+                ...AppState.demandas.map(d => [
+                    d.id,
+                    `"${traduzirStatus(d.status)}"`,
+                    `"${(d.faixa_idade || '').replace(/"/g, '""')}"`,
+                    `"${(d.municipio_form || '').replace(/"/g, '""')}"`,
+                    `"${(d.moradia || '').replace(/"/g, '""')}"`,
+                    `"${(d.violencia || '').replace(/"/g, '""')}"`,
+                    `"${(d.descricao || '').replace(/"/g, '""')}"`,
+                    `"${(d.perigo_agora || '').replace(/"/g, '""')}"`,
+                    `"${(d.nivel_urgencia || '').replace(/"/g, '""')}"`,
+                    `"${formatarData(d.data_envio)}"`,
+                    d.lida == 1 ? 'Sim' : 'Não'
+                ].join(','))
+            ].join('\n');
+
+            // Cria blob e faz download
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+
+            link.setAttribute('href', url);
+            link.setAttribute('download', `demandas_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`${AppState.demandas.length} demandas exportadas com sucesso!`, 'success');
         }
 
         async function visualizarDemanda(id) {
@@ -1326,84 +1802,84 @@ function renderizarGraficoStatus(dados) {
 
         async function atualizarStatusDemanda(id) {
             const novoStatus = document.getElementById(`demanda-status-${id}`).value;
-            
+
             try {
                 const response = await fetch(API_BASE + 'demandas_admin_api.php?action=atualizar_status', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, status: novoStatus })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
-                    alert('Status atualizado com sucesso!');
+                    showToast('Status atualizado com sucesso!', 'success');
                     carregarDemandas();
                     fecharModal('modal-demanda');
                 } else {
-                    alert(data.mensagem);
+                    showToast(data.mensagem || 'Erro ao atualizar status', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao atualizar status:', error);
-                alert('Erro ao atualizar status');
+                showToast('Erro de conexão ao atualizar status', 'error');
             }
         }
 
         async function adicionarNota(id) {
             const inputNota = document.getElementById(`nova-nota-${id}`);
             const nota = inputNota.value.trim();
-            
+
             if (!nota) {
-                alert('Digite uma nota primeiro');
+                showToast('Digite uma nota primeiro', 'warning');
                 return;
             }
-            
+
             try {
                 const response = await fetch(API_BASE + 'demandas_admin_api.php?action=adicionar_nota', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id, nota })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
-                    alert('Nota adicionada!');
+                    showToast('Nota adicionada com sucesso!', 'success');
                     inputNota.value = '';
                     visualizarDemanda(id);
                 } else {
-                    alert(data.mensagem);
+                    showToast(data.mensagem || 'Erro ao adicionar nota', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao adicionar nota:', error);
-                alert('Erro ao adicionar nota');
+                showToast('Erro de conexão ao adicionar nota', 'error');
             }
         }
 
         async function deletarDemanda(id) {
-            if (!confirm('Tem certeza que deseja deletar esta demanda?')) {
+            if (!confirm('Tem certeza que deseja deletar esta demanda? Esta ação não pode ser desfeita.')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch(API_BASE + 'demandas_admin_api.php?action=deletar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
-                    alert('Demanda deletada com sucesso!');
+                    showToast('Demanda deletada com sucesso!', 'success');
                     carregarDemandas();
                     fecharModal('modal-demanda');
                 } else {
-                    alert(data.mensagem);
+                    showToast(data.mensagem || 'Erro ao deletar demanda', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao deletar demanda:', error);
-                alert('Erro ao deletar demanda');
+                showToast('Erro de conexão ao deletar demanda', 'error');
             }
         }
 
@@ -1512,25 +1988,25 @@ function renderizarGraficoStatus(dados) {
             if (!confirm('Deseja realmente cancelar este alerta?')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch('./api/alertas.php?acao=cancelar', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ alerta_id: id })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.status === 'success') {
-                    alert('Alerta cancelado com sucesso!');
+                    showToast('Alerta cancelado com sucesso!', 'success');
                     carregarAlertas();
                 } else {
-                    alert(data.message);
+                    showToast(data.message || 'Erro ao cancelar alerta', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao cancelar alerta:', error);
-                alert('Erro ao cancelar alerta');
+                showToast('Erro de conexão ao cancelar alerta', 'error');
             }
         }
 
@@ -1654,7 +2130,7 @@ function renderizarGraficoStatus(dados) {
 
         async function salvarServico(e) {
             e.preventDefault();
-            
+
             const id = document.getElementById('servico-id').value;
             const dados = {
                 titulo: document.getElementById('servico-titulo').value,
@@ -1668,29 +2144,29 @@ function renderizarGraficoStatus(dados) {
                 link: document.getElementById('servico-link').value,
                 ativo: document.getElementById('servico-ativo').checked ? 1 : 0
             };
-            
+
             const action = id ? 'atualizar' : 'criar';
             if (id) dados.id = parseInt(id);
-            
+
             try {
                 const response = await fetch(API_BASE + `servicos_api.php?action=${action}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dados)
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
-                    alert(id ? 'Serviço atualizado!' : 'Serviço criado!');
+                    showToast(id ? 'Serviço atualizado com sucesso!' : 'Serviço criado com sucesso!', 'success');
                     carregarServicos();
                     fecharModal('modal-servico');
                 } else {
-                    alert(data.mensagem);
+                    showToast(data.mensagem || 'Erro ao salvar serviço', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao salvar serviço:', error);
-                alert('Erro ao salvar serviço');
+                showToast('Erro de conexão ao salvar serviço', 'error');
             }
         }
 
@@ -1698,25 +2174,25 @@ function renderizarGraficoStatus(dados) {
             if (!confirm('Tem certeza que deseja deletar este serviço?')) {
                 return;
             }
-            
+
             try {
                 const response = await fetch(API_BASE + 'servicos_api.php?action=deletar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
-                    alert('Serviço deletado!');
+                    showToast('Serviço deletado com sucesso!', 'success');
                     carregarServicos();
                 } else {
-                    alert(data.mensagem);
+                    showToast(data.mensagem || 'Erro ao deletar serviço', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao deletar serviço:', error);
-                alert('Erro ao deletar serviço');
+                showToast('Erro de conexão ao deletar serviço', 'error');
             }
         }
 
@@ -1726,50 +2202,50 @@ function renderizarGraficoStatus(dados) {
         
         async function fazerUploadBanner(numero, arquivo) {
             if (!arquivo) return;
-            
+
             // Valida tamanho (5MB)
             if (arquivo.size > 5 * 1024 * 1024) {
-                alert('Arquivo muito grande! O tamanho máximo é 5MB.');
+                showToast('Arquivo muito grande! O tamanho máximo é 5MB.', 'error');
                 return;
             }
-            
+
             // Valida tipo
             const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
             if (!tiposPermitidos.includes(arquivo.type)) {
-                alert('Tipo de arquivo não permitido! Use JPG, PNG ou WebP.');
+                showToast('Tipo de arquivo não permitido! Use JPG, PNG ou WebP.', 'error');
                 return;
             }
-            
+
             const formData = new FormData();
             formData.append('imagem', arquivo);
             formData.append('tipo', 'banner');
             formData.append('numero', numero);
-            
+
             try {
-                alert('Fazendo upload... Aguarde.');
-                
+                showToast('Fazendo upload... Aguarde.', 'info');
+
                 const response = await fetch(API_BASE + 'upload_imagem_api.php?action=upload', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.sucesso) {
-                    alert('Banner atualizado com sucesso!');
-                    
+                    showToast('Banner atualizado com sucesso!', 'success');
+
                     // Atualiza preview
                     const preview = document.getElementById(`preview-banner${numero}`);
                     preview.src = data.arquivo.url + '?t=' + new Date().getTime();
-                    
+
                     // Atualiza data
                     document.getElementById(`data-banner${numero}`).textContent = new Date().toLocaleString('pt-BR');
                 } else {
-                    alert(data.mensagem);
+                    showToast(data.mensagem || 'Erro ao fazer upload', 'error');
                 }
             } catch (error) {
                 console.error('Erro ao fazer upload:', error);
-                alert('Erro ao fazer upload do banner');
+                showToast('Erro de conexão ao fazer upload do banner', 'error');
             }
         }
 
@@ -1827,6 +2303,9 @@ function renderizarGraficoStatus(dados) {
         window.fecharModal = fecharModal;
         window.fazerLogout = fazerLogout;
         window.navegarParaSecao = navegarParaSecao;
+        window.exportarDemandasCSV = exportarDemandasCSV;
+        window.mudarPagina = mudarPagina;
+        window.showToast = showToast;
     </script>
 </body>
 </html>
